@@ -2,11 +2,12 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
+    android:tint="@color/themed_icon_fg"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <!-- Saucer + Cup Outline with Top Half Open (y=10..13.5) and Bottom Half Solid Filled (y=13.5..19) -->
     <path
-        android:fillColor="#FF000000"
+        android:fillColor="@color/themed_icon_fg"
         android:fillType="evenOdd"
         android:pathData="M4,20 H18 V22 H4 Z M5,8 H19 C20.66,8 22,9.34 22,11 C22,12.66 20.66,14 19,14 H17 V15 C17,17.21 15.21,19 13,19 H9 C6.79,19 5,17.21 5,15 Z M7,10 V13.5 H15 V10 Z M17,12 H19 C19.55,12 20,11.55 20,11 C20,10.45 19.55,10 19,10 H17 V12 Z" />
 </vector>

@@ -37,13 +37,17 @@
     <color name="switch_thumb_on">#FFFFFFFF</color>
     <color name="switch_thumb_off">#FF475569</color>
 
-    <!-- Coffee Cup Pictogram & Squircle Widget (Pastel Blue Half-Empty vs Pastel Orange Full) -->
-    <color name="cup_badge_empty_bg">#FFC7DCFA</color>
-    <color name="cup_badge_full_bg">#FFFFD2B3</color>
-    <color name="cup_liquid_empty">#FF3B82F6</color>
+    <!-- Material Design Dynamic Themed Icon Colors (System Material You Palette) -->
+    <color name="themed_icon_bg">@android:color/system_accent1_100</color>
+    <color name="themed_icon_fg">@android:color/system_accent1_700</color>
+
+    <!-- Coffee Cup Pictogram & Squircle Widget -->
+    <color name="cup_badge_empty_bg">@android:color/system_accent1_100</color>
+    <color name="cup_badge_full_bg">@android:color/system_accent1_100</color>
+    <color name="cup_liquid_empty">#FF2563EB</color>
     <color name="cup_liquid_full">#FFFF7A28</color>
     <color name="cup_stroke_empty">#FF1D4ED8</color>
-    <color name="cup_stroke_full">#FFC2410C</color>
-    <color name="cup_steam_color">#FFFF5500</color>
+    <color name="cup_stroke_full">#FFEA580C</color>
+    <color name="cup_steam_color">#FFEA580C</color>
     <color name="cup_crema_color">#FFFFF7ED</color>
 </resources>

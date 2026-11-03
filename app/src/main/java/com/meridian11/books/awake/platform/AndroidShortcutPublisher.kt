@@ -11,7 +11,8 @@ import com.meridian11.books.awake.domain.AwakeState
 import com.meridian11.books.awake.domain.ShortcutPublisherPort
 
 /**
- * Publishes and dynamically updates the 4 right-click Taskbar context menu shortcuts.
+ * Publishes and dynamically updates the 4 right-click Taskbar context menu shortcuts
+ * using Material Design themed vector icons (zero color emojis).
  * Re-binds `ShortcutInfo.Builder.setActivity(...)` to the currently enabled `<activity-alias>`
  * whenever the Coffee Cup icon switches between Empty and Full.
  */
@@ -25,14 +26,14 @@ class AndroidShortcutPublisher(
         val activeAlias = iconSwitcher.getActiveAliasComponent()
 
         val statusLabelShort = if (state.isAwake) {
-            "☕ Awake (${formatDurationShort(state.durationMinutes)})"
+            "Awake (${formatDurationShort(state.durationMinutes)})"
         } else {
-            "⚪ Normal Suspend"
+            "Normal Suspend"
         }
         val statusLabelLong = if (state.isAwake) {
-            "☕ Awake: ${formatDurationLong(state.durationMinutes)} (Click to Suspend)"
+            "Awake: ${formatDurationLong(state.durationMinutes)} (Click to Suspend)"
         } else {
-            "⚪ Status: Normal Suspend (Click to Keep Awake)"
+            "Status: Normal Suspend (Click to Keep Awake)"
         }
         val statusIconRes = if (state.isAwake) {
             R.drawable.ic_stat_coffee_full
@@ -40,12 +41,12 @@ class AndroidShortcutPublisher(
             R.drawable.ic_stat_coffee_empty
         }
 
-        val timerLabelShort = "⏱️ Timer: ${formatDurationShort(state.durationMinutes)}"
-        val timerLabelLong = "⏱️ Cycle Timer (${formatDurationLong(state.durationMinutes)})"
+        val timerLabelShort = "Timer: ${formatDurationShort(state.durationMinutes)}"
+        val timerLabelLong = "Cycle Timer (${formatDurationLong(state.durationMinutes)})"
 
         val pulseStateText = if (state.tapSimulationEnabled) "ON" else "OFF"
-        val pulseLabelShort = "🖱️ Tap Sim: $pulseStateText (${state.tapIntervalSeconds}s)"
-        val pulseLabelLong = "🖱️ Tap Simulator: $pulseStateText (Every ${state.tapIntervalSeconds}s)"
+        val pulseLabelShort = "Tap Sim: $pulseStateText (${state.tapIntervalSeconds}s)"
+        val pulseLabelLong = "Tap Simulator: $pulseStateText (Every ${state.tapIntervalSeconds}s)"
 
         val shortcuts = listOf(
             ShortcutInfo.Builder(context, ID_STATUS_TOGGLE)
@@ -78,8 +79,8 @@ class AndroidShortcutPublisher(
             ShortcutInfo.Builder(context, ID_OPEN_SETTINGS)
                 .setActivity(activeAlias)
                 .setRank(3)
-                .setShortLabel("⚙️ Awake Settings…")
-                .setLongLabel("⚙️ Keep Awake Settings…")
+                .setShortLabel("Awake Settings…")
+                .setLongLabel("Keep Awake Settings…")
                 .setIcon(Icon.createWithResource(context, R.drawable.ic_shortcut_settings))
                 .setIntent(createSettingsIntent())
                 .build()

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -81,9 +80,7 @@ data class AwakeThemeColors(
     val cardStroke: Color,
     val tonalTrackBg: Color,
     val heroInactiveBg: Color,
-    val heroInactiveStroke: Color,
     val heroActiveBg: Color,
-    val heroActiveStroke: Color,
     val textPrimary: Color,
     val textSecondary: Color,
     val chipSelectedBg: Color,
@@ -97,16 +94,8 @@ data class AwakeThemeColors(
     val switchThumbOff: Color,
     val cupBadgeEmptyBg: Color,
     val cupBadgeFullBg: Color,
-    val cupLiquidEmpty: Color,
-    val cupLiquidFull: Color,
-    val cupStrokeEmpty: Color,
-    val cupStrokeFull: Color,
-    val cupSteam: Color,
-    val cupCrema: Color,
-    val glassSurfaceBg: Color,
-    val glassSurfaceStroke: Color,
-    val glassCardBg: Color,
-    val glassCardStroke: Color
+    val cupIconTintInactive: Color,
+    val cupIconTintActive: Color
 )
 
 @Composable
@@ -119,9 +108,7 @@ fun rememberAwakeThemeColors(darkTheme: Boolean = isSystemInDarkTheme()): AwakeT
                 cardStroke = Color(0xFF334155),
                 tonalTrackBg = Color(0xFF0F172A),
                 heroInactiveBg = Color(0xFF172554),
-                heroInactiveStroke = Color(0xFF1E40AF),
                 heroActiveBg = Color(0xFF431407),
-                heroActiveStroke = Color(0xFF9A3412),
                 textPrimary = Color(0xFFF8FAFC),
                 textSecondary = Color(0xFF94A3B8),
                 chipSelectedBg = Color(0xFF3B82F6),
@@ -135,16 +122,8 @@ fun rememberAwakeThemeColors(darkTheme: Boolean = isSystemInDarkTheme()): AwakeT
                 switchThumbOff = Color(0xFF94A3B8),
                 cupBadgeEmptyBg = Color(0xFF1E3A8A),
                 cupBadgeFullBg = Color(0xFF7C2D12),
-                cupLiquidEmpty = Color(0xFF60A5FA),
-                cupLiquidFull = Color(0xFFFF7A28),
-                cupStrokeEmpty = Color(0xFF93C5FD),
-                cupStrokeFull = Color(0xFFFDBA74),
-                cupSteam = Color(0xFFFF9E5E),
-                cupCrema = Color(0xFFFFEDD5),
-                glassSurfaceBg = Color(0xB80F172A),
-                glassSurfaceStroke = Color(0x4DFFFFFF),
-                glassCardBg = Color(0x661E293B),
-                glassCardStroke = Color(0x33FFFFFF)
+                cupIconTintInactive = Color(0xFF93C5FD),
+                cupIconTintActive = Color(0xFFFFB88C)
             )
         } else {
             AwakeThemeColors(
@@ -153,9 +132,7 @@ fun rememberAwakeThemeColors(darkTheme: Boolean = isSystemInDarkTheme()): AwakeT
                 cardStroke = Color(0xFFE2E8F0),
                 tonalTrackBg = Color(0xFFE8EFF8),
                 heroInactiveBg = Color(0xFFDCE8FA),
-                heroInactiveStroke = Color(0xFFB6CFF5),
                 heroActiveBg = Color(0xFFFFE6D5),
-                heroActiveStroke = Color(0xFFFFC59E),
                 textPrimary = Color(0xFF0F172A),
                 textSecondary = Color(0xFF475569),
                 chipSelectedBg = Color(0xFF2563EB),
@@ -169,24 +146,18 @@ fun rememberAwakeThemeColors(darkTheme: Boolean = isSystemInDarkTheme()): AwakeT
                 switchThumbOff = Color(0xFF475569),
                 cupBadgeEmptyBg = Color(0xFFC7DCFA),
                 cupBadgeFullBg = Color(0xFFFFD2B3),
-                cupLiquidEmpty = Color(0xFF3B82F6),
-                cupLiquidFull = Color(0xFFFF7A28),
-                cupStrokeEmpty = Color(0xFF1D4ED8),
-                cupStrokeFull = Color(0xFFC2410C),
-                cupSteam = Color(0xFFFF5500),
-                cupCrema = Color(0xFFFFF7ED),
-                glassSurfaceBg = Color(0xB8F8FAFD),
-                glassSurfaceStroke = Color(0xE6FFFFFF),
-                glassCardBg = Color(0x8CFFFFFF),
-                glassCardStroke = Color(0xB3FFFFFF)
+                cupIconTintInactive = Color(0xFF1D4ED8),
+                cupIconTintActive = Color(0xFFEA580C)
             )
         }
     }
 }
 
 /**
- * Jetpack Compose Material 3 Expressive Coffee Cup Pictogram:
- * - Animates smoothly between 0.5f (Half-Empty Pastel Blue) and 1.0f (Filled Pastel Orange with steam).
+ * Single-tone Material Design Themed Coffee Cup Icon in Jetpack Compose:
+ * - Uses a single monochrome Material theme icon tint (`cupIconTintInactive` on the blue badge
+ *   when Half-Empty, and `cupIconTintActive` on the orange badge when Filled) with negative-space
+ *   rim detail and rising steam pills.
  */
 @Composable
 fun CoffeeCupPictogramComposable(
@@ -210,15 +181,10 @@ fun CoffeeCupPictogramComposable(
         animationSpec = tween(durationMillis = 320),
         label = "cupBadgeBg"
     )
-    val liquidColor by animateColorAsState(
-        targetValue = if (isAwake) colors.cupLiquidFull else colors.cupLiquidEmpty,
+    val iconTint by animateColorAsState(
+        targetValue = if (isAwake) colors.cupIconTintActive else colors.cupIconTintInactive,
         animationSpec = tween(durationMillis = 320),
-        label = "cupLiquidColor"
-    )
-    val strokeColor by animateColorAsState(
-        targetValue = if (isAwake) colors.cupStrokeFull else colors.cupStrokeEmpty,
-        animationSpec = tween(durationMillis = 320),
-        label = "cupStrokeColor"
+        label = "cupIconTint"
     )
 
     Canvas(modifier = modifier.size(size)) {
@@ -226,7 +192,7 @@ fun CoffeeCupPictogramComposable(
         val h = this.size.height
         val s = minOf(w, h) / 108f
 
-        // 1. Rounded Squircle Badge Background
+        // 1. Rounded Squircle Badge Background (No outline)
         val badgeInset = 4f * s
         val badgeRadius = 28f * s
         drawRoundRect(
@@ -255,7 +221,7 @@ fun CoffeeCupPictogramComposable(
             )
         }
 
-        // 3. Clipped Liquid Fill (0.5f = Half-Empty, 1.0f = Completely Filled)
+        // 3. Clipped Single-Tone Material Themed Liquid Fill (0.5f = Half-Empty, 1.0f = Filled)
         clipPath(cupPath) {
             val cupHeight = cupBottom - cupTop
             val liquidTop = cupBottom - cupHeight * fillLevel.coerceIn(0f, 1f)
@@ -276,22 +242,23 @@ fun CoffeeCupPictogramComposable(
                 lineTo(cupRight, cupBottom)
                 close()
             }
-            drawPath(path = wavePath, color = liquidColor)
+            drawPath(path = wavePath, color = iconTint)
 
+            // Negative-space rim cut (in badge background color) so the icon remains strictly 1-color Material themed
             if (steamAlpha > 0.05f) {
                 drawRoundRect(
-                    color = colors.cupCrema.copy(alpha = steamAlpha),
-                    topLeft = Offset(cupLeft + 2f * s, liquidTop + 1.5f * s),
-                    size = Size((cupRight - cupLeft) - 4f * s, 3f * s),
+                    color = badgeBg.copy(alpha = steamAlpha),
+                    topLeft = Offset(cupLeft + 4f * s, liquidTop + 4f * s),
+                    size = Size((cupRight - cupLeft) - 8f * s, 3f * s),
                     cornerRadius = CornerRadius(1.5f * s, 1.5f * s)
                 )
             }
         }
 
-        // 4. Cup Bowl Outline
+        // 4. Cup Bowl Outline (Same Material Theme Icon Tint)
         drawPath(
             path = cupPath,
-            color = strokeColor,
+            color = iconTint,
             style = Stroke(width = 4.5f * s, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
 
@@ -309,23 +276,23 @@ fun CoffeeCupPictogramComposable(
         }
         drawPath(
             path = handlePath,
-            color = strokeColor,
+            color = iconTint,
             style = Stroke(width = 4.5f * s, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
 
         // 6. Saucer Base Pill
         drawLine(
-            color = strokeColor,
+            color = iconTint,
             start = Offset(26f * s, 76f * s),
             end = Offset(74f * s, 76f * s),
             strokeWidth = 4.5f * s,
             cap = StrokeCap.Round
         )
 
-        // 7. Vertical Steam Pills (Active Filled Cup Only)
+        // 7. Vertical Steam Pills (Same Material Theme Icon Tint)
         if (steamAlpha > 0.02f) {
             val lift = (1f - steamAlpha) * 4f * s
-            val steamColor = colors.cupSteam.copy(alpha = steamAlpha)
+            val steamColor = iconTint.copy(alpha = steamAlpha)
             drawLine(
                 color = steamColor,
                 start = Offset(42f * s, 28f * s + lift),
@@ -341,6 +308,60 @@ fun CoffeeCupPictogramComposable(
                 cap = StrokeCap.Round
             )
         }
+    }
+}
+
+/**
+ * Material Design Themed Plus (+) Vector Icon.
+ */
+@Composable
+private fun MaterialAddIcon(tint: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.size(14.dp)) {
+        val w = size.width
+        val h = size.height
+        val stroke = 2.dp.toPx()
+        drawLine(
+            color = tint,
+            start = Offset(w * 0.2f, h * 0.5f),
+            end = Offset(w * 0.8f, h * 0.5f),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint,
+            start = Offset(w * 0.5f, h * 0.2f),
+            end = Offset(w * 0.5f, h * 0.8f),
+            strokeWidth = stroke,
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+/**
+ * Material Design Themed Checkmark or Chevron Vector Icon.
+ */
+@Composable
+private fun MaterialStatusIcon(isEnabled: Boolean, tint: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier = modifier.size(14.dp)) {
+        val w = size.width
+        val h = size.height
+        val stroke = 2.dp.toPx()
+        val path = Path().apply {
+            if (isEnabled) {
+                moveTo(w * 0.18f, h * 0.52f)
+                lineTo(w * 0.42f, h * 0.76f)
+                lineTo(w * 0.84f, h * 0.26f)
+            } else {
+                moveTo(w * 0.35f, h * 0.22f)
+                lineTo(w * 0.68f, h * 0.5f)
+                lineTo(w * 0.35f, h * 0.78f)
+            }
+        }
+        drawPath(
+            path = path,
+            color = tint,
+            style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
     }
 }
 
@@ -461,205 +482,10 @@ fun <T> SegmentedPillRow(
 }
 
 /**
- * Compact Frosted-Glass Popover Panel (`QuickGlassPanelActivity`) shown when clicking
- * the Taskbar Coffee Cup icon.
- * - Features a whiteish frosted-glass background with cross-window blur ONLY behind the panel.
- * - Exposes the main Awake toggle, main duration modes (`Infinite | 30m | 1h | 2h`), and a
- *   `⚙️ Settings…` item that opens the full non-blurred Awake window (`SettingsDialogActivity`).
- */
-@Composable
-fun QuickGlassPanelScreen(
-    state: AwakeState,
-    onToggleAwake: () -> Unit,
-    onSelectMode: (Int) -> Unit,
-    onOpenFullSettings: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    val colors = rememberAwakeThemeColors()
-    val durationLabel = AndroidShortcutPublisher.formatDurationLong(state.durationMinutes)
-
-    val heroBg by animateColorAsState(
-        targetValue = if (state.isAwake) colors.heroActiveBg.copy(alpha = 0.82f)
-        else colors.heroInactiveBg.copy(alpha = 0.82f),
-        animationSpec = tween(durationMillis = 250),
-        label = "glassHeroBg"
-    )
-    val heroStroke by animateColorAsState(
-        targetValue = if (state.isAwake) colors.heroActiveStroke else colors.heroInactiveStroke,
-        animationSpec = tween(durationMillis = 250),
-        label = "glassHeroStroke"
-    )
-
-    Column(
-        modifier = Modifier
-            .width(380.dp)
-            .clip(RoundedCornerShape(28.dp))
-            .padding(18.dp)
-            .testTag("quick_glass_panel_root"),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Top Header Bar inside Glass Panel
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CoffeeCupPictogramComposable(
-                    isAwake = state.isAwake,
-                    colors = colors,
-                    size = 24.dp
-                )
-                Text(
-                    text = "Awake",
-                    fontFamily = AwakeSansFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = colors.textPrimary
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape)
-                    .background(colors.glassCardBg)
-                    .clickable { onDismiss() }
-                    .testTag("glass_close_btn"),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "✕",
-                    fontFamily = AwakeSansFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    color = colors.textSecondary
-                )
-            }
-        }
-
-        // 1. Hero Awake Toggle Card
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
-                .background(heroBg)
-                .border(1.25.dp, heroStroke, RoundedCornerShape(22.dp))
-                .clickable { onToggleAwake() }
-                .padding(14.dp)
-                .testTag("glass_hero_toggle"),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            CoffeeCupPictogramComposable(
-                isAwake = state.isAwake,
-                colors = colors,
-                size = 60.dp
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = if (state.isAwake) "Keeping Awake" else "Normal Sleep",
-                    fontFamily = AwakeSansFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = colors.textPrimary,
-                    maxLines = 1
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = if (state.isAwake) {
-                        "Filled Cup ($durationLabel) • Active"
-                    } else {
-                        "Half-Empty Cup ($durationLabel)"
-                    },
-                    fontFamily = AwakeSansFontFamily,
-                    fontSize = 12.sp,
-                    color = colors.textSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            AwakeM3Switch(
-                checked = state.isAwake,
-                onCheckedChange = { onToggleAwake() },
-                colors = colors,
-                useHeroOrangeWhenChecked = true
-            )
-        }
-
-        // 2. Main Modes (Keep-Awake Duration) on Frosted Glass Card
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(colors.glassCardBg)
-                .border(1.dp, colors.glassCardStroke, RoundedCornerShape(20.dp))
-                .padding(12.dp)
-        ) {
-            Text(
-                text = "Keep-Awake Mode",
-                fontFamily = AwakeSansFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
-                color = colors.textPrimary,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            SegmentedPillRow(
-                items = listOf(
-                    0 to "Infinite",
-                    30 to "30m",
-                    60 to "1h",
-                    120 to "2h"
-                ),
-                selectedValue = state.durationMinutes,
-                onSelect = onSelectMode,
-                colors = colors,
-                tagPrefix = "glass_mode",
-                trackColor = colors.tonalTrackBg.copy(alpha = 0.65f)
-            )
-        }
-
-        // 3. Settings Item -> Opens Full Opaque App Window
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
-                .background(colors.glassCardBg)
-                .border(1.dp, colors.glassCardStroke, RoundedCornerShape(18.dp))
-                .clickable { onOpenFullSettings() }
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .testTag("glass_open_settings"),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "⚙️ Settings & Guardrails…",
-                fontFamily = AwakeSansFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 13.5.sp,
-                color = colors.textPrimary
-            )
-            Text(
-                text = "Open App →",
-                fontFamily = AwakeSansFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.5.sp,
-                color = colors.chipSelectedBg
-            )
-        }
-    }
-}
-
-/**
  * Full Desktop / Googlebook App Window (`SettingsDialogActivity`) built in Jetpack Compose.
- * - Preserves the exact opaque, non-blurred Material 3 Expressive Pastel Blue / Pastel Orange
- *   2-column design on the device with a seamless window header (`captionBar`).
+ * - Preserves the opaque, non-blurred Material 3 Expressive Pastel Blue / Pastel Orange
+ *   2-column design with a seamless window header (`captionBar`) and an outline-free
+ *   blue/orange Hero Toggle Container.
  */
 @Composable
 fun SettingsWindowScreen(
@@ -776,18 +602,13 @@ private fun HeroToggleCard(
         animationSpec = tween(durationMillis = 250),
         label = "heroCardBg"
     )
-    val stroke by animateColorAsState(
-        targetValue = if (state.isAwake) colors.heroActiveStroke else colors.heroInactiveStroke,
-        animationSpec = tween(durationMillis = 250),
-        label = "heroCardStroke"
-    )
 
+    // Toggle container has NO outline—pure solid blue (inactive) or orange (active)
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(28.dp))
             .background(bg)
-            .border(1.5.dp, stroke, RoundedCornerShape(28.dp))
             .clickable { onToggleAwake() }
             .padding(18.dp)
             .testTag("card_hero_toggle"),
@@ -902,7 +723,7 @@ private fun DirectToggleCard(
                 text = if (state.directToggleOnTap) {
                     "Active: Tapping Taskbar icon toggles directly (right-click icon for Settings)."
                 } else {
-                    "Off: Tapping Taskbar icon opens quick glass panel (turn ON for 1-click toggle)."
+                    "Off: Tapping Taskbar icon opens window (turn ON for 1-click toggle)."
                 },
                 fontFamily = AwakeSansFontFamily,
                 fontSize = 12.sp,
@@ -957,19 +778,22 @@ private fun QsAndWidgetCard(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Box(
+            Row(
                 modifier = Modifier
                     .weight(1f)
                     .height(38.dp)
                     .clip(CircleShape)
                     .background(colors.chipSelectedBg)
                     .clickable { onAddQsTile() }
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = 10.dp)
                     .testTag("btn_add_qs_tile"),
-                contentAlignment = Alignment.Center
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
+                MaterialAddIcon(tint = colors.chipSelectedText)
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "＋ Quick Settings Tile",
+                    text = "Quick Settings Tile",
                     fontFamily = AwakeSansFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
@@ -977,19 +801,22 @@ private fun QsAndWidgetCard(
                     maxLines = 1
                 )
             }
-            Box(
+            Row(
                 modifier = Modifier
                     .weight(1f)
                     .height(38.dp)
                     .clip(CircleShape)
                     .background(colors.tonalTrackBg)
                     .clickable { onPinWidget() }
-                    .padding(horizontal = 8.dp)
+                    .padding(horizontal = 10.dp)
                     .testTag("btn_pin_widget"),
-                contentAlignment = Alignment.Center
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
+                MaterialAddIcon(tint = colors.chipUnselectedText)
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "＋ Squircle Widget",
+                    text = "Squircle Widget",
                     fontFamily = AwakeSansFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
@@ -1067,7 +894,7 @@ private fun TapSimulationCard(
             tagPrefix = "btn_tap"
         )
         Spacer(modifier = Modifier.height(8.dp))
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(38.dp)
@@ -1076,13 +903,18 @@ private fun TapSimulationCard(
                 .clickable { onOpenAccessibilitySetup() }
                 .padding(horizontal = 12.dp)
                 .testTag("btn_accessibility_setup"),
-            contentAlignment = Alignment.Center
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
         ) {
+            if (isAccessibilityEnabled) {
+                MaterialStatusIcon(isEnabled = true, tint = colors.chipUnselectedText)
+                Spacer(modifier = Modifier.width(6.dp))
+            }
             Text(
                 text = if (isAccessibilityEnabled) {
-                    "✓ Accessibility Keep-Alive Service Enabled"
+                    "Accessibility Keep-Alive Service Enabled"
                 } else {
-                    "Enable Accessibility Service for Tap Simulation →"
+                    "Enable Accessibility Service for Tap Simulation"
                 },
                 fontFamily = AwakeSansFontFamily,
                 fontWeight = FontWeight.Bold,
@@ -1090,6 +922,10 @@ private fun TapSimulationCard(
                 color = colors.chipUnselectedText,
                 maxLines = 1
             )
+            if (!isAccessibilityEnabled) {
+                Spacer(modifier = Modifier.width(6.dp))
+                MaterialStatusIcon(isEnabled = false, tint = colors.chipUnselectedText)
+            }
         }
     }
 }

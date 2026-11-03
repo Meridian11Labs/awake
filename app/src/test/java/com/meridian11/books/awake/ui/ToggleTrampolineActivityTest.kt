@@ -44,7 +44,7 @@ class ToggleTrampolineActivityTest {
     }
 
     @Test
-    fun `by default when directToggleOnTap is false, launching ToggleTrampolineActivity opens QuickGlassPanelActivity without toggling`() =
+    fun `by default when directToggleOnTap is false, launching ToggleTrampolineActivity opens SettingsDialogActivity without toggling`() =
         runTest(UnconfinedTestDispatcher()) {
             app.configureDependencies(
                 repository = repository,
@@ -58,11 +58,11 @@ class ToggleTrampolineActivityTest {
             val activity = controller.get()
 
             assertTrue("Trampoline must finish immediately", activity.isFinishing)
-            assertFalse("Keep Awake state must remain unchanged until toggled in glass panel", repository.stateFlow.first().isAwake)
+            assertFalse("Keep Awake state must remain unchanged until toggled in window", repository.stateFlow.first().isAwake)
 
             val nextIntent = shadowOf(app).nextStartedActivity
-            assertNotNull("Must launch QuickGlassPanelActivity by default when tapped", nextIntent)
-            assertEquals(QuickGlassPanelActivity::class.java.name, nextIntent.component?.className)
+            assertNotNull("Must launch SettingsDialogActivity by default when tapped", nextIntent)
+            assertEquals(SettingsDialogActivity::class.java.name, nextIntent.component?.className)
         }
 
     @Test
@@ -80,7 +80,7 @@ class ToggleTrampolineActivityTest {
             // 1st click: OFF -> ON with zero window
             val firstController = Robolectric.buildActivity(ToggleTrampolineActivity::class.java).create()
             assertTrue("Activity must finish inside onCreate with zero UI", firstController.get().isFinishing)
-            assertNull("Must NOT open any window when directToggleOnTap is true", shadowOf(app).nextStartedActivity)
+            assertNull("Must NOT open SettingsDialogActivity when directToggleOnTap is true", shadowOf(app).nextStartedActivity)
             assertTrue("Keep Awake must be ON after first click", repository.stateFlow.first().isAwake)
             assertEquals(true, iconPort.lastIsFullCup)
             assertTrue(enginePort.isRunning)
@@ -88,7 +88,7 @@ class ToggleTrampolineActivityTest {
             // 2nd click: ON -> OFF with zero window
             val secondController = Robolectric.buildActivity(ToggleTrampolineActivity::class.java).create()
             assertTrue(secondController.get().isFinishing)
-            assertNull("Must NOT open any window on second click", shadowOf(app).nextStartedActivity)
+            assertNull("Must NOT open SettingsDialogActivity on second click", shadowOf(app).nextStartedActivity)
             assertFalse("Keep Awake must be OFF after second click", repository.stateFlow.first().isAwake)
             assertEquals(false, iconPort.lastIsFullCup)
             assertFalse(enginePort.isRunning)

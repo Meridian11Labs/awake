@@ -5,40 +5,31 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- 2 Bold Pictogram Vertical Pill Steam Bars -->
+    <!-- 2 Bold Pictogram Vertical Pill Steam Bars (Material Design Themed Icon Foreground) -->
     <path
         android:pathData="M44,36 V24 M56,36 V24"
         android:strokeWidth="5.0"
-        android:strokeColor="#FF5500"
+        android:strokeColor="@color/themed_icon_fg"
         android:strokeLineCap="round" />
 
     <!-- Saucer Pill Base -->
     <path
         android:pathData="M29,81 H71"
         android:strokeWidth="5.0"
-        android:strokeColor="#C2410C"
+        android:strokeColor="@color/themed_icon_fg"
         android:strokeLineCap="round" />
 
     <!-- Geometric D-Handle -->
     <path
         android:pathData="M68,49 H73 C77.42,49 81,52.13 81,56 C81,59.87 77.42,63 73,63 H68"
         android:strokeWidth="5.0"
-        android:strokeColor="#C2410C"
+        android:strokeColor="@color/themed_icon_fg"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
 
-    <!-- 100% Completely Filled Cup Vessel (y=44..74) -->
+    <!-- 100% Solid Filled Cup Body with negative-space rim highlight cut -->
     <path
-        android:fillColor="#FF7A28"
-        android:pathData="M32,44 H68 V60 C68,67.73 61.73,74 54,74 H46 C38.27,74 32,67.73 32,60 Z"
-        android:strokeWidth="5.0"
-        android:strokeColor="#C2410C"
-        android:strokeLineJoin="round" />
-
-    <!-- Pictogram Top Rim Crema Highlight -->
-    <path
-        android:pathData="M38,49.5 H62"
-        android:strokeWidth="3.5"
-        android:strokeColor="#FFF7ED"
-        android:strokeLineCap="round" />
+        android:fillColor="@color/themed_icon_fg"
+        android:fillType="evenOdd"
+        android:pathData="M29.5,41.5 H70.5 V60 C70.5,69.11 63.11,76.5 54,76.5 H46 C36.89,76.5 29.5,69.11 29.5,60 Z M37,48 H63 V51.5 H37 Z" />
 </vector>
