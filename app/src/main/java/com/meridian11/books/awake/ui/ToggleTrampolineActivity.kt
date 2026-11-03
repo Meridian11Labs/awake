@@ -5,15 +5,15 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import com.meridian11.books.awake.AwakeApp
-import com.meridian11.books.awake.platform.AndroidShortcutPublisher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
  * Trampoline Activity invoked when the user clicks the Awake Coffee Cup icon in
  * the Googlebook Taskbar or Launcher:
- * - By default (`directToggleOnTap == false`), opens the adaptive Googlebook
- *   Settings / Control window (`SettingsDialogActivity`).
+ * - By default (`directToggleOnTap == false`), opens the compact Frosted-Glass
+ *   Popover Panel (`QuickGlassPanelActivity`) with the main modes and a Settings item
+ *   that opens the full non-blurred app (`SettingsDialogActivity`).
  * - When "Hide settings, tap icon to toggle" (`directToggleOnTap == true`) is enabled,
  *   immediately toggles the Keep-Awake state (Half-Empty Cup <-> Filled Cup) with
  *   zero window rendered.
@@ -32,18 +32,17 @@ class ToggleTrampolineActivity : Activity() {
                     if (state.directToggleOnTap) {
                         app.controller.toggle()
                     } else {
-                        val settingsIntent = Intent(
+                        val glassPanelIntent = Intent(
                             this@ToggleTrampolineActivity,
-                            SettingsDialogActivity::class.java
+                            QuickGlassPanelActivity::class.java
                         ).apply {
-                            action = AndroidShortcutPublisher.ACTION_OPEN_SETTINGS
                             addFlags(
                                 Intent.FLAG_ACTIVITY_NEW_TASK or
                                     Intent.FLAG_ACTIVITY_CLEAR_TOP or
                                     Intent.FLAG_ACTIVITY_SINGLE_TOP
                             )
                         }
-                        startActivity(settingsIntent)
+                        startActivity(glassPanelIntent)
                     }
                 } finally {
                     finish()

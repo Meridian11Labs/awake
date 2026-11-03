@@ -65,7 +65,17 @@
             android:taskAffinity=""
             android:theme="@style/Theme.Awake.Trampoline" />
 
-        <!-- Adaptive Desktop/Googlebook Control & Settings Window (Also handles QS Tile Long-Press) -->
+        <!-- Compact Frosted-Glass Popover Panel (Blur only behind panel, opens on Taskbar icon click) -->
+        <activity
+            android:name=".ui.QuickGlassPanelActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleInstance"
+            android:taskAffinity="com.meridian11.books.awake.glass"
+            android:theme="@style/Theme.Awake.GlassPanel" />
+
+        <!-- Adaptive Desktop/Googlebook Control & Settings Window (Opaque, No Blur, handles QS Tile Long-Press) -->
         <activity
             android:name=".ui.SettingsDialogActivity"
             android:exported="true"

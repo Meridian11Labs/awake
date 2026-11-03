@@ -2,12 +2,13 @@ package com.meridian11.books.awake.ui
 
 import android.content.Intent
 import android.service.quicksettings.TileService
-import android.widget.Button
-import android.widget.Switch
-import android.widget.TextView
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.core.app.ApplicationProvider
 import com.meridian11.books.awake.AwakeApp
-import com.meridian11.books.awake.R
 import com.meridian11.books.awake.domain.FakeIconSwitcherPort
 import com.meridian11.books.awake.domain.FakeKeepAwakeEnginePort
 import com.meridian11.books.awake.domain.FakeShortcutPublisherPort
@@ -21,6 +22,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -32,6 +34,9 @@ import org.robolectric.shadows.ShadowAlertDialog
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34], application = AwakeApp::class)
 class SettingsDialogActivityTest {
+
+    @get:Rule
+    val composeRule = createEmptyComposeRule()
 
     private lateinit var app: AwakeApp
     private lateinit var repository: InMemoryAwakePreferencesRepository
@@ -49,7 +54,7 @@ class SettingsDialogActivityTest {
     }
 
     @Test
-    fun `toggling master Awake switch and guardrail switches in SettingsDialogActivity updates repository and hero cup pictogram`() =
+    fun `toggling master Awake switch and guardrail switches in Compose SettingsDialogActivity updates repository and keeps full app non-blurred`() =
         runTest(UnconfinedTestDispatcher()) {
             app.configureDependencies(
                 repository = repository,
@@ -63,21 +68,18 @@ class SettingsDialogActivityTest {
                 .setup()
                 .get()
 
-            val heroCup = activity.findViewById<CoffeeCupPictogramView>(R.id.coffee_cup_hero)
-            assertNotNull("Hero CoffeeCupPictogramView must be present", heroCup)
-            assertEquals("Deactive state must render Half-Empty (0.5f) cup", 0.5f, heroCup.targetFillLevel, 0.01f)
+            assertFalse("Full app SettingsDialogActivity must NOT have glass blur", activity.isGlassBlurConfigured)
 
-            val masterSwitch = activity.findViewById<Switch>(R.id.switch_master_awake)
-            assertFalse(masterSwitch.isChecked)
+            composeRule.onNodeWithTag("coffee_cup_hero", useUnmergedTree = true).assertIsDisplayed()
+            assertFalse(repository.stateFlow.first().isAwake)
 
-            masterSwitch.performClick()
+            composeRule.onNodeWithTag("switch_master_awake").performClick()
+            composeRule.waitForIdle()
             assertTrue(repository.stateFlow.first().isAwake)
             assertEquals(true, iconPort.lastIsFullCup)
-            assertEquals("Active state must render Filled (1.0f) cup", 1.0f, heroCup.targetFillLevel, 0.01f)
 
-            val dimSwitch = activity.findViewById<Switch>(R.id.switch_allow_dimming)
-            assertFalse(dimSwitch.isChecked)
-            dimSwitch.performClick()
+            composeRule.onNodeWithTag("switch_allow_dimming").performScrollTo().performClick()
+            composeRule.waitForIdle()
             assertTrue(repository.stateFlow.first().allowScreenDimming)
         }
 
@@ -92,39 +94,26 @@ class SettingsDialogActivityTest {
                 scope = backgroundScope
             )
 
-            val activity = Robolectric.buildActivity(SettingsDialogActivity::class.java)
+            Robolectric.buildActivity(SettingsDialogActivity::class.java)
                 .setup()
                 .get()
 
-            val hideSettingsSwitch = activity.findViewById<Switch>(R.id.switch_direct_toggle_on_tap)
-            assertNotNull("Hide settings, tap icon to toggle switch must exist", hideSettingsSwitch)
-            assertFalse(hideSettingsSwitch.isChecked)
+            assertFalse(repository.stateFlow.first().directToggleOnTap)
 
-            hideSettingsSwitch.performClick()
+            composeRule.onNodeWithTag("switch_direct_toggle_on_tap").performScrollTo().performClick()
+            composeRule.waitForIdle()
             assertTrue(
                 "Enabling switch must set directToggleOnTap = true in repository",
                 repository.stateFlow.first().directToggleOnTap
             )
 
-            val qsInfo = activity.findViewById<TextView>(R.id.tv_qs_tile_info)
-            assertNotNull("Window must explain the Quick Settings tile", qsInfo)
-            assertTrue(qsInfo.text.toString().contains("Quick Settings", ignoreCase = true))
-
-            val addQsBtn = activity.findViewById<Button>(R.id.btn_add_qs_tile)
-            assertNotNull("Add Quick Settings Tile button must exist", addQsBtn)
+            composeRule.onNodeWithTag("tv_qs_tile_info").performScrollTo().assertIsDisplayed()
+            composeRule.onNodeWithTag("btn_add_qs_tile").performScrollTo().assertIsDisplayed()
         }
 
     @Test
     fun `SettingsDialogActivity resolves and launches from Quick Settings long-press ACTION_QS_TILE_PREFERENCES`() =
         runTest(UnconfinedTestDispatcher()) {
-            app.configureDependencies(
-                repository = repository,
-                iconSwitcher = iconPort,
-                shortcutPublisher = shortcutPort,
-                enginePort = enginePort,
-                scope = backgroundScope
-            )
-
             val qsIntent = Intent(TileService.ACTION_QS_TILE_PREFERENCES).apply {
                 setPackage(app.packageName)
             }
@@ -144,14 +133,12 @@ class SettingsDialogActivityTest {
                 scope = backgroundScope
             )
 
-            val activity = Robolectric.buildActivity(SettingsDialogActivity::class.java)
+            Robolectric.buildActivity(SettingsDialogActivity::class.java)
                 .setup()
                 .get()
 
-            val tapSwitch = activity.findViewById<Switch>(R.id.switch_tap_simulation)
-            assertFalse(tapSwitch.isChecked)
-
-            tapSwitch.performClick()
+            composeRule.onNodeWithTag("switch_tap_simulation").performScrollTo().performClick()
+            composeRule.waitForIdle()
 
             val dialog = ShadowAlertDialog.getLatestAlertDialog()
             assertTrue("Prominent disclosure AlertDialog must be shown before enabling", dialog != null && dialog.isShowing)

@@ -11,7 +11,22 @@
         <item name="android:windowAnimationStyle">@null</item>
     </style>
 
-    <!-- Desktop/Googlebook-ready Material 3 Expressive Window Theme with Seamless Header -->
+    <!-- Compact Frosted-Glass Popover Panel (Blur ONLY behind the panel) -->
+    <style name="Theme.Awake.GlassPanel" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowCloseOnTouchOutside">true</item>
+        <item name="android:windowBackground">@drawable/bg_glass_panel</item>
+        <item name="android:windowBackgroundBlurRadius">96px</item>
+        <item name="android:windowElevation">24dp</item>
+        <item name="android:fontFamily">@font/awake_sans</item>
+        <item name="fontFamily">@font/awake_sans</item>
+    </style>
+
+    <!-- Full Desktop/Googlebook Material 3 Expressive Window Theme (Opaque, No Blur, Seamless Header) -->
     <style name="Theme.Awake.SettingsDialog" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowNoTitle">true</item>
         <item name="android:fontFamily">@font/awake_sans</item>
