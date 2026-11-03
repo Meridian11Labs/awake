@@ -1,23 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="window_bg">#FF121316</color>
-    <color name="surface_card_bg">#FF1E2025</color>
-    <color name="surface_card_stroke">#FF2E323B</color>
-    <color name="hero_card_inactive_bg">#FF1C2026</color>
-    <color name="hero_card_active_bg">#FF382417</color>
-    <color name="dialog_surface">#FF1E2025</color>
-    <color name="dialog_text_primary">#FFF3EFEA</color>
-    <color name="dialog_text_secondary">#FFA6B0BE</color>
-    <color name="dialog_divider">#FF2E323B</color>
-    <color name="chip_selected_bg">#FFFFB68B</color>
-    <color name="chip_selected_text">#FF4E250B</color>
-    <color name="chip_unselected_bg">#FF2A2D35</color>
-    <color name="chip_unselected_text">#FFE2DDD5</color>
-    <color name="cup_badge_empty_bg">#FF262B33</color>
-    <color name="cup_badge_full_bg">#FF4A2C18</color>
-    <color name="cup_liquid_empty">#FF8B96A8</color>
-    <color name="cup_liquid_full">#FFD97B43</color>
-    <color name="cup_stroke_empty">#FFD0D7E2</color>
-    <color name="cup_stroke_full">#FFFFDFC4</color>
-    <color name="cup_steam_color">#FFFFB68B</color>
+    <!-- Seamless Window & Header Ground (Deep Midnight Blue-Slate) -->
+    <color name="window_bg">#FF0E131A</color>
+
+    <!-- Elevated Card Surfaces & Inner Tonal Segmented Tracks -->
+    <color name="surface_card_bg">#FF171F2C</color>
+    <color name="surface_card_stroke">#FF263244</color>
+    <color name="surface_tonal_bg">#FF111823</color>
+
+    <!-- Hero Toggle Card: Deep Pastel Navy (Inactive) vs Warm Sunset Orange-Slate (Active) -->
+    <color name="hero_card_inactive_bg">#FF18263C</color>
+    <color name="hero_card_inactive_stroke">#FF2B4266</color>
+    <color name="hero_card_active_bg">#FF362015</color>
+    <color name="hero_card_active_stroke">#FF613824</color>
+
+    <!-- Typography & Dividers -->
+    <color name="dialog_surface">#FF171F2C</color>
+    <color name="dialog_text_primary">#FFF1F5F9</color>
+    <color name="dialog_text_secondary">#FF94A3B8</color>
+    <color name="dialog_divider">#FF263244</color>
+
+    <!-- Segmented Pills & Action Buttons (Pastel Sky Blue) -->
+    <color name="chip_selected_bg">#FF60A5FA</color>
+    <color name="chip_selected_text">#FF0B2545</color>
+    <color name="chip_unselected_bg">#FF222E40</color>
+    <color name="chip_unselected_text">#FFD8E4F2</color>
+
+    <!-- Secondary Tonal Action Button -->
+    <color name="chip_accent_bg">#FF3B2316</color>
+    <color name="chip_accent_text">#FFFFB88C</color>
+
+    <!-- Material 3 Switch Colors -->
+    <color name="switch_track_on">#FF60A5FA</color>
+    <color name="switch_track_off">#FF263244</color>
+    <color name="switch_track_off_stroke">#FF64748B</color>
+    <color name="switch_thumb_on">#FF0B2545</color>
+    <color name="switch_thumb_off">#FF94A3B8</color>
+
+    <!-- Coffee Cup Pictogram & Squircle Widget -->
+    <color name="cup_badge_empty_bg">#FF213452</color>
+    <color name="cup_badge_full_bg">#FF4D2B1A</color>
+    <color name="cup_liquid_empty">#FF60A5FA</color>
+    <color name="cup_liquid_full">#FFFF8C42</color>
+    <color name="cup_stroke_empty">#FF93C5FD</color>
+    <color name="cup_stroke_full">#FFFFC299</color>
+    <color name="cup_steam_color">#FFFF9E66</color>
+    <color name="cup_crema_color">#FFFFF7ED</color>
 </resources>

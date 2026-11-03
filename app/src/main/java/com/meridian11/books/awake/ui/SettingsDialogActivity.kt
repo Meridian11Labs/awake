@@ -5,17 +5,22 @@ import android.app.StatusBarManager
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Typeface
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
+import android.view.WindowInsetsController
 import android.widget.Button
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.meridian11.books.awake.AwakeApp
 import com.meridian11.books.awake.R
 import com.meridian11.books.awake.domain.AwakeState
@@ -32,11 +37,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * Desktop/Googlebook-ready, Material Design 3, reactive, adaptive Settings & Control window.
+ * Desktop/Googlebook-ready, Material Design 3 Expressive, reactive, adaptive Settings & Control window.
  *
- * Launched by default when clicking the Awake icon, or via right-clicking the Taskbar icon
- * ("⚙️ Awake Settings…") / long-pressing the Quick Settings tile (`ACTION_QS_TILE_PREFERENCES`)
- * when "Hide settings, tap icon to toggle" is enabled.
+ * Uses a seamless transparent window caption bar (`APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND`)
+ * so the window header and app background are one continuous surface.
  */
 class SettingsDialogActivity : AppCompatActivity() {
 
@@ -78,7 +82,9 @@ class SettingsDialogActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableSeamlessDesktopWindowHeader()
         setContentView(R.layout.activity_settings_dialog)
+        applyCaptionBarInsets()
 
         bindViews()
         setupListeners()
@@ -88,6 +94,42 @@ class SettingsDialogActivity : AppCompatActivity() {
             app.repository.stateFlow.collectLatest { state ->
                 renderState(state)
             }
+        }
+    }
+
+    /**
+     * Makes the Googlebook desktop freeform window caption bar 100% transparent so
+     * the window header and app ground (`@color/window_bg`) form a single seamless surface.
+     */
+    private fun enableSeamlessDesktopWindowHeader() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+            Configuration.UI_MODE_NIGHT_YES
+        val controller = window.insetsController ?: return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val clearCaption = WindowInsetsController.APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND
+            val lightCaption = WindowInsetsController.APPEARANCE_LIGHT_CAPTION_BARS
+            val appearance = if (!isNight) clearCaption or lightCaption else clearCaption
+            controller.setSystemBarsAppearance(appearance, clearCaption or lightCaption)
+        }
+    }
+
+    private fun applyCaptionBarInsets() {
+        val scrollRoot = findViewById<View>(R.id.scroll_root) ?: return
+        val contentContainer = findViewById<View>(R.id.content_container) ?: return
+        val basePad = (20 * resources.displayMetrics.density).toInt()
+        val topBasePad = (12 * resources.displayMetrics.density).toInt()
+        ViewCompat.setOnApplyWindowInsetsListener(scrollRoot) { _, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.captionBar()
+            )
+            contentContainer.setPadding(
+                basePad + bars.left,
+                topBasePad + bars.top,
+                basePad + bars.right,
+                basePad + bars.bottom
+            )
+            insets
         }
     }
 
@@ -275,22 +317,22 @@ class SettingsDialogActivity : AppCompatActivity() {
 
             val durationLabel = AndroidShortcutPublisher.formatDurationLong(state.durationMinutes)
             tvDialogTitle.text = if (state.isAwake) {
-                "Filled Cup • Keeping Awake"
+                "Keeping Awake"
             } else {
-                "Half-Empty • Normal Sleep"
+                "Normal Sleep"
             }
             tvStatusSubtitle.text = if (state.isAwake) {
-                "Active ($durationLabel) • Click card, Taskbar icon, QS tile, or widget to toggle"
+                "Filled Cup ($durationLabel) • Preventing Googlebook sleep"
             } else {
-                "Deactive ($durationLabel preset) • Normal Googlebook suspend/resume"
+                "Half-Empty Cup ($durationLabel) • Normal Googlebook sleep"
             }
             switchMasterAwake.isChecked = state.isAwake
 
             switchDirectToggleOnTap.isChecked = state.directToggleOnTap
             tvDirectToggleSubtitle.text = if (state.directToggleOnTap) {
-                "Active: Tapping the Taskbar icon toggles Awake immediately with no window. Right-click the Taskbar icon (or long-press the Quick Settings tile) to open Settings."
+                "Active: Tapping Taskbar icon toggles directly (right-click icon for Settings)."
             } else {
-                "Off (Default): Tapping the Taskbar icon opens this window. Turn ON to hide settings and toggle Awake directly on icon tap."
+                "Off: Tapping Taskbar icon opens window (turn ON for 1-click toggle)."
             }
 
             highlightSelectedButton(
@@ -382,7 +424,7 @@ class SettingsDialogActivity : AppCompatActivity() {
                 if (isSelected) R.drawable.bg_chip_selected else R.drawable.bg_chip_unselected
             )
             button.setTextColor(if (isSelected) selectedTextColor else unselectedTextColor)
-            button.setTypeface(null, if (isSelected) Typeface.BOLD else Typeface.NORMAL)
+            button.setTypeface(button.typeface, if (isSelected) Typeface.BOLD else Typeface.NORMAL)
         }
     }
 

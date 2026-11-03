@@ -11,13 +11,19 @@
         <item name="android:windowAnimationStyle">@null</item>
     </style>
 
-    <!-- Desktop/Googlebook-ready Adaptive Material 3 Window theme -->
+    <!-- Desktop/Googlebook-ready Material 3 Expressive Window Theme with Seamless Header -->
     <style name="Theme.Awake.SettingsDialog" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowNoTitle">true</item>
+        <item name="android:fontFamily">@font/awake_sans</item>
+        <item name="fontFamily">@font/awake_sans</item>
+        <item name="colorPrimary">@color/window_bg</item>
+        <item name="colorPrimaryDark">@color/window_bg</item>
+        <item name="android:colorPrimary">@color/window_bg</item>
         <item name="colorAccent">@color/chip_selected_bg</item>
         <item name="colorControlActivated">@color/chip_selected_bg</item>
         <item name="android:windowBackground">@color/window_bg</item>
-        <item name="android:statusBarColor">@color/window_bg</item>
-        <item name="android:navigationBarColor">@color/window_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

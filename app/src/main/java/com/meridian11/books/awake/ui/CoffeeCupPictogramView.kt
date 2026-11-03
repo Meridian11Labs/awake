@@ -4,7 +4,6 @@ import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
@@ -16,9 +15,10 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 /**
- * Custom Material 3 Expressive animated pictogram view rendering the Coffee Cup:
- * - Deactive (`isAwake = false`): 50% Half-Empty cup (`fillLevel = 0.5f`), no steam.
- * - Active (`isAwake = true`): 100% Completely Filled cup (`fillLevel = 1.0f`) + 2 vertical pill steam bars.
+ * Custom Material 3 Expressive animated pictogram view rendering the Coffee Cup
+ * in the Pastel Blue / Pastel Orange palette:
+ * - Deactive (`isAwake = false`): 50% Half-Empty cup (`fillLevel = 0.5f`) in Pastel Sky Blue, no steam.
+ * - Active (`isAwake = true`): 100% Completely Filled cup (`fillLevel = 1.0f`) in Warm Pastel Orange + 2 vertical pill steam bars.
  */
 class CoffeeCupPictogramView @JvmOverloads constructor(
     context: Context,
@@ -50,7 +50,6 @@ class CoffeeCupPictogramView @JvmOverloads constructor(
     private val cremaPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
-        color = Color.parseColor("#FFF3E0")
     }
     private val steamPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -89,7 +88,6 @@ class CoffeeCupPictogramView @JvmOverloads constructor(
             addUpdateListener { anim ->
                 val f = anim.animatedFraction
                 currentFillLevel = startLevel + (desiredLevel - startLevel) * (anim.animatedValue as Float)
-                // Gentle wave peaks in the middle of the transition and settles cleanly to 0
                 waveAmplitudeFraction = sin(f * PI).toFloat() * 0.06f
                 wavePhaseRadians = (f * 2.0 * PI).toFloat()
                 invalidate()
@@ -114,11 +112,13 @@ class CoffeeCupPictogramView @JvmOverloads constructor(
         val strokeEmptyColor = context.getColor(R.color.cup_stroke_empty)
         val strokeFullColor = context.getColor(R.color.cup_stroke_full)
         val steamColor = context.getColor(R.color.cup_steam_color)
+        val cremaColor = context.getColor(R.color.cup_crema_color)
 
         badgePaint.color = argbEvaluator.evaluate(t, badgeEmptyColor, badgeFullColor) as Int
         liquidPaint.color = argbEvaluator.evaluate(t, liquidEmptyColor, liquidFullColor) as Int
         strokePaint.color = argbEvaluator.evaluate(t, strokeEmptyColor, strokeFullColor) as Int
         steamPaint.color = steamColor
+        cremaPaint.color = cremaColor
 
         // 1. Squircle Badge Background
         badgeRect.set(0f, 0f, w, h)
@@ -168,7 +168,6 @@ class CoffeeCupPictogramView @JvmOverloads constructor(
         liquidWavePath.close()
         canvas.drawPath(liquidWavePath, liquidPaint)
 
-        // Draw mid-cup meniscus line when near Half-Empty, or crema highlight when near Full
         if (currentFillLevel < 0.65f) {
             val meniscusAlpha = ((0.65f - currentFillLevel) / 0.15f).coerceIn(0f, 1f)
             val prevAlpha = strokePaint.alpha

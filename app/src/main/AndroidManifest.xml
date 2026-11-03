@@ -74,11 +74,11 @@
             android:resizeableActivity="true"
             android:theme="@style/Theme.Awake.SettingsDialog">
             <layout
-                android:defaultHeight="620dp"
-                android:defaultWidth="860dp"
+                android:defaultHeight="660dp"
+                android:defaultWidth="920dp"
                 android:gravity="center"
-                android:minHeight="480dp"
-                android:minWidth="400dp" />
+                android:minHeight="500dp"
+                android:minWidth="460dp" />
             <intent-filter>
                 <action android:name="com.meridian11.books.awake.action.OPEN_SETTINGS" />
                 <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />

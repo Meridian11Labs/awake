@@ -9,27 +9,27 @@
     <path
         android:pathData="M29,81 H71"
         android:strokeWidth="5.0"
-        android:strokeColor="#444B56"
+        android:strokeColor="#1D4ED8"
         android:strokeLineCap="round" />
 
     <!-- Geometric D-Handle -->
     <path
         android:pathData="M68,49 H73 C77.42,49 81,52.13 81,56 C81,59.87 77.42,63 73,63 H68"
         android:strokeWidth="5.0"
-        android:strokeColor="#444B56"
+        android:strokeColor="#1D4ED8"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
 
-    <!-- Lower 50% Half-Empty Liquid Fill (y=59..74) -->
+    <!-- Lower 50% Half-Empty Pastel Azure Liquid Fill (y=59..74) -->
     <path
-        android:fillColor="#7A8494"
+        android:fillColor="#3B82F6"
         android:pathData="M32,59 H68 V60 C68,67.73 61.73,74 54,74 H46 C38.27,74 32,67.73 32,60 Z" />
 
     <!-- Mid-Cup Horizontal Meniscus Divider (y=59) -->
     <path
         android:pathData="M33,59 H67"
         android:strokeWidth="3.5"
-        android:strokeColor="#444B56"
+        android:strokeColor="#1D4ED8"
         android:strokeLineCap="round" />
 
     <!-- Full Cup Vessel Outline (Upper half y=44..59 remains open/transparent) -->
@@ -37,6 +37,6 @@
         android:fillColor="#00000000"
         android:pathData="M32,44 H68 V60 C68,67.73 61.73,74 54,74 H46 C38.27,74 32,67.73 32,60 Z"
         android:strokeWidth="5.0"
-        android:strokeColor="#444B56"
+        android:strokeColor="#1D4ED8"
         android:strokeLineJoin="round" />
 </vector>
