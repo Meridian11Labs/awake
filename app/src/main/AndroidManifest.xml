@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <application
+        android:name=".AwakeApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher_empty"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_empty"
+        android:supportsRtl="true">
+
+        <!-- Target zero-UI trampoline activity (routes to window by default or direct toggle when configured) -->
+        <activity
+            android:name=".ui.ToggleTrampolineActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Awake.Trampoline" />
+
+        <!-- Alias 1: Half-Empty Coffee Cup (Default Enabled — Normal Suspend/Resume) -->
+        <activity-alias
+            android:name=".EmptyCupAlias"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_empty"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_empty"
+            android:targetActivity=".ui.ToggleTrampolineActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Alias 2: Completely Filled Coffee Cup (Enabled when Keep Awake is Active) -->
+        <activity-alias
+            android:name=".FullCupAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_full"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_full"
+            android:targetActivity=".ui.ToggleTrampolineActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- Zero-UI trampoline for Right-Click Dynamic Shortcut instant actions -->
+        <activity
+            android:name=".ui.ShortcutActionActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleInstance"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Awake.Trampoline" />
+
+        <!-- Adaptive Desktop/Googlebook Control & Settings Window (Also handles QS Tile Long-Press) -->
+        <activity
+            android:name=".ui.SettingsDialogActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:theme="@style/Theme.Awake.SettingsDialog">
+            <layout
+                android:defaultHeight="620dp"
+                android:defaultWidth="860dp"
+                android:gravity="center"
+                android:minHeight="480dp"
+                android:minWidth="400dp" />
+            <intent-filter>
+                <action android:name="com.meridian11.books.awake.action.OPEN_SETTINGS" />
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Tier 1 Keep-Awake Foreground Service (WakeLock + Guardrail Monitors) -->
+        <service
+            android:name=".service.KeepAwakeService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps the Googlebook display and CPU awake while the user toggles the Awake taskbar coffee cup icon ON." />
+        </service>
+
+        <!-- Tier 2 & 3 Optional Accessibility Service (1x1 Keep-Screen-On Overlay + Tap Simulator) -->
+        <service
+            android:name=".service.KeepAwakeAccessibilityService"
+            android:exported="false"
+            android:label="@string/accessibility_service_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- Companion Quick Settings Tile in System Tray -->
+        <service
+            android:name=".service.KeepAwakeTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_stat_coffee_empty"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- 1x1 Squircle Coffee Cup Toggle Widget -->
+        <receiver
+            android:name=".widget.AwakeSquircleWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.meridian11.books.awake.action.WIDGET_TOGGLE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/awake_squircle_widget_info" />
+        </receiver>
+
+        <!-- System Boot & Power Event Receiver -->
+        <receiver
+            android:name=".receiver.SystemEventReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+                <action android:name="android.intent.action.BATTERY_LOW" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

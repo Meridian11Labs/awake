@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Awake</string>
+    <string name="app_name_active">Awake (Active)</string>
+    <string name="widget_name">Awake Coffee Cup Toggle</string>
+    <string name="widget_description">1×1 squircle coffee cup widget — tap to toggle between keeping your Googlebook awake (filled cup) and normal sleep (half-empty cup).</string>
+    <string name="shortcut_settings_short">⚙️ Awake Settings…</string>
+    <string name="shortcut_settings_long">⚙️ Keep Awake Settings…</string>
+    <string name="accessibility_service_label">Awake Display &amp; Tap Keep-Alive</string>
+    <string name="accessibility_service_description">Keeps your Googlebook awake when toggled ON via an invisible keep-screen-on surface or optional periodic idle micro-tap. Does not read screen content or collect any user data.</string>
+    <string name="disclosure_title">Accessibility Service Disclosure</string>
+    <string name="disclosure_message">Awake uses the Android Accessibility Service solely to keep your display active (via a keep-screen-on overlay or optional periodic idle micro-tap every X seconds) when WakeLocks cannot be used.\n\nAwake does NOT read screen content, observe keystrokes, collect personal data, or transmit any information.</string>
+    <string name="disclosure_accept">Agree &amp; Enable</string>
+    <string name="disclosure_decline">No Thanks</string>
+</resources>

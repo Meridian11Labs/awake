@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="window_bg">#FF121316</color>
+    <color name="surface_card_bg">#FF1E2025</color>
+    <color name="surface_card_stroke">#FF2E323B</color>
+    <color name="hero_card_inactive_bg">#FF1C2026</color>
+    <color name="hero_card_active_bg">#FF382417</color>
+    <color name="dialog_surface">#FF1E2025</color>
+    <color name="dialog_text_primary">#FFF3EFEA</color>
+    <color name="dialog_text_secondary">#FFA6B0BE</color>
+    <color name="dialog_divider">#FF2E323B</color>
+    <color name="chip_selected_bg">#FFFFB68B</color>
+    <color name="chip_selected_text">#FF4E250B</color>
+    <color name="chip_unselected_bg">#FF2A2D35</color>
+    <color name="chip_unselected_text">#FFE2DDD5</color>
+    <color name="cup_badge_empty_bg">#FF262B33</color>
+    <color name="cup_badge_full_bg">#FF4A2C18</color>
+    <color name="cup_liquid_empty">#FF8B96A8</color>
+    <color name="cup_liquid_full">#FFD97B43</color>
+    <color name="cup_stroke_empty">#FFD0D7E2</color>
+    <color name="cup_stroke_full">#FFFFDFC4</color>
+    <color name="cup_steam_color">#FFFFB68B</color>
+</resources>

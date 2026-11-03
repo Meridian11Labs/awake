@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_description"
+    android:initialLayout="@layout/widget_awake_squircle"
+    android:maxResizeHeight="110dp"
+    android:maxResizeWidth="110dp"
+    android:minHeight="64dp"
+    android:minWidth="64dp"
+    android:previewImage="@mipmap/ic_launcher_full"
+    android:resizeMode="none"
+    android:targetCellHeight="1"
+    android:targetCellWidth="1"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen" />
