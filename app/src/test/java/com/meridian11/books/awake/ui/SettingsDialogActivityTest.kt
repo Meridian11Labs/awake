@@ -3,6 +3,7 @@ package com.meridian11.books.awake.ui
 import android.content.Intent
 import android.service.quicksettings.TileService
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -123,7 +124,7 @@ class SettingsDialogActivityTest {
         }
 
     @Test
-    fun `enabling Tap Simulation before disclosure accepted shows Compose Prominent Disclosure modal with Decline and Agree actions`() =
+    fun `subtle footer links open About, Privacy Policy, and Terms of Service subpage with Meridian11 LLC ownership`() =
         runTest(UnconfinedTestDispatcher()) {
             app.configureDependencies(
                 repository = repository,
@@ -137,47 +138,7 @@ class SettingsDialogActivityTest {
                 .setup()
                 .get()
 
-            composeRule.onNodeWithTag("switch_tap_simulation").performScrollTo().performClick()
-            composeRule.waitForIdle()
-
-            // Prominent disclosure modal must be shown and tapSimulationEnabled must still be false
-            composeRule.onNodeWithTag("dialog_accessibility_disclosure").assertIsDisplayed()
-            assertFalse(repository.stateFlow.first().tapSimulationEnabled)
-            assertFalse(repository.stateFlow.first().accessibilityDisclosureAccepted)
-
-            // Clicking Decline dismisses modal and keeps both false
-            composeRule.onNodeWithTag("btn_disclosure_decline").performClick()
-            composeRule.waitForIdle()
-            assertFalse(repository.stateFlow.first().tapSimulationEnabled)
-            assertFalse(repository.stateFlow.first().accessibilityDisclosureAccepted)
-
-            // Trigger again and click Agree & Continue
-            composeRule.onNodeWithTag("switch_tap_simulation").performScrollTo().performClick()
-            composeRule.waitForIdle()
-            composeRule.onNodeWithTag("btn_disclosure_accept").performClick()
-            composeRule.waitForIdle()
-
-            assertTrue(repository.stateFlow.first().accessibilityDisclosureAccepted)
-            assertTrue(repository.stateFlow.first().tapSimulationEnabled)
-        }
-
-    @Test
-    fun `subtle footer links open About, Privacy Policy, Terms of Service, and Accessibility subpage with Meridian11 LLC ownership and consent revocation`() =
-        runTest(UnconfinedTestDispatcher()) {
-            repository.setAccessibilityDisclosureAccepted(true)
-            repository.setTapSimulationConfig(enabled = true, intervalSeconds = 60)
-
-            app.configureDependencies(
-                repository = repository,
-                iconSwitcher = iconPort,
-                shortcutPublisher = shortcutPort,
-                enginePort = enginePort,
-                scope = backgroundScope
-            )
-
-            Robolectric.buildActivity(SettingsDialogActivity::class.java)
-                .setup()
-                .get()
+            composeRule.onNodeWithTag("link_footer_accessibility").assertDoesNotExist()
 
             // Click subtle About footer link
             composeRule.onNodeWithTag("link_footer_about").performScrollTo().performClick()
@@ -185,25 +146,19 @@ class SettingsDialogActivityTest {
 
             composeRule.onNodeWithTag("screen_legal_subpage").assertIsDisplayed()
             composeRule.onNodeWithTag("tv_meridian11_ownership", useUnmergedTree = true).assertIsDisplayed()
+            composeRule.onNodeWithTag("tab_legal_accessibility").assertDoesNotExist()
 
             // Switch to Privacy Policy tab
             composeRule.onNodeWithTag("tab_legal_privacy").performClick()
             composeRule.waitForIdle()
-            composeRule.onNodeWithTag("tv_legal_privacy_body", useUnmergedTree = true).assertIsDisplayed()
+            composeRule.onNodeWithTag("tv_legal_privacy_body", useUnmergedTree = true)
+                .assertIsDisplayed()
+                .assertTextContains("https://meridian11.com/privacy/awake", substring = true)
 
             // Switch to Terms of Service tab
             composeRule.onNodeWithTag("tab_legal_terms").performClick()
             composeRule.waitForIdle()
             composeRule.onNodeWithTag("tv_legal_terms_body", useUnmergedTree = true).assertIsDisplayed()
-
-            // Switch to Accessibility API tab and revoke consent
-            composeRule.onNodeWithTag("tab_legal_accessibility").performClick()
-            composeRule.waitForIdle()
-            composeRule.onNodeWithTag("btn_revoke_accessibility_consent").performScrollTo().performClick()
-            composeRule.waitForIdle()
-
-            assertFalse(repository.stateFlow.first().accessibilityDisclosureAccepted)
-            assertFalse(repository.stateFlow.first().tapSimulationEnabled)
 
             // Return to main Settings window
             composeRule.onNodeWithTag("btn_legal_back").performClick()
