@@ -7,18 +7,20 @@
 
     <FrameLayout
         android:id="@+id/widget_squircle_container"
-        android:layout_width="68dp"
-        android:layout_height="68dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:background="@drawable/bg_widget_squircle_empty">
+        android:background="@drawable/bg_widget_squircle_empty"
+        android:padding="6dp">
 
         <ImageView
-            android:id="@+id/iv_widget_cup"
-            android:layout_width="52dp"
-            android:layout_height="52dp"
+            android:id="@+id/img_widget_cup"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:layout_gravity="center"
             android:contentDescription="@string/app_name"
             android:scaleType="fitCenter"
-            android:src="@drawable/ic_launcher_foreground_empty" />
+            android:src="@drawable/ic_widget_cup_empty" />
     </FrameLayout>
+
 </FrameLayout>

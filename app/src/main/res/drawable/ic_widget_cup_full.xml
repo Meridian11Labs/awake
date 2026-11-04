@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 2 Bold Pictogram Vertical Pill Steam Bars (Material Design Single-Tone Orange Active Widget Icon) -->
+    <path
+        android:pathData="M44,36 V24 M56,36 V24"
+        android:strokeWidth="5.0"
+        android:strokeColor="@color/cup_stroke_full"
+        android:strokeLineCap="round" />
+
+    <!-- Saucer Pill Base -->
+    <path
+        android:pathData="M29,81 H71"
+        android:strokeWidth="5.0"
+        android:strokeColor="@color/cup_stroke_full"
+        android:strokeLineCap="round" />
+
+    <!-- Geometric D-Handle -->
+    <path
+        android:pathData="M68,49 H73 C77.42,49 81,52.13 81,56 C81,59.87 77.42,63 73,63 H68"
+        android:strokeWidth="5.0"
+        android:strokeColor="@color/cup_stroke_full"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <!-- 100% Solid Filled Cup Body with negative-space rim highlight cut -->
+    <path
+        android:fillColor="@color/cup_stroke_full"
+        android:fillType="evenOdd"
+        android:pathData="M29.5,41.5 H70.5 V60 C70.5,69.11 63.11,76.5 54,76.5 H46 C36.89,76.5 29.5,69.11 29.5,60 Z M37,48 H63 V51.5 H37 Z" />
+</vector>

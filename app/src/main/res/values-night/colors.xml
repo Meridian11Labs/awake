@@ -42,8 +42,8 @@
     <color name="themed_icon_fg">@android:color/system_accent1_200</color>
 
     <!-- Coffee Cup Pictogram & Squircle Widget -->
-    <color name="cup_badge_empty_bg">@android:color/system_accent1_800</color>
-    <color name="cup_badge_full_bg">@android:color/system_accent1_800</color>
+    <color name="cup_badge_empty_bg">#FF1E3A8A</color>
+    <color name="cup_badge_full_bg">#FF7C2D12</color>
     <color name="cup_liquid_empty">#FF60A5FA</color>
     <color name="cup_liquid_full">#FFFF8C42</color>
     <color name="cup_stroke_empty">#FF93C5FD</color>

@@ -766,7 +766,7 @@ private fun QsAndWidgetCard(
         )
         Spacer(modifier = Modifier.height(3.dp))
         Text(
-            text = "Quick Settings Tile: Tap system tray tile to toggle Awake, or long-press for Settings.",
+            text = "Quick Settings Tile: Tap system tray tile to toggle Awake, or long-press for Settings. Widget: Starts 1×1 by default — expand larger for duration & Tap Sim controls.",
             fontFamily = AwakeSansFontFamily,
             fontSize = 12.sp,
             lineHeight = 16.sp,

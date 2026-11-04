@@ -17,23 +17,38 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+/**
+ * Application container providing dependencies for Awake.
+ * Also supports test-time dependency overrides for Robolectric and instrumentation tests,
+ * and continuously synchronizes all surfaces (App Icon, Settings Window, Widget, and Quick Settings Tile)
+ * whenever [AwakePreferencesRepository.stateFlow] emits.
+ */
 class AwakeApp : Application() {
 
-    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    var appScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+        private set
+
     private var startupSyncJob: Job? = null
+    private var continuousSurfaceSyncJob: Job? = null
 
     lateinit var repository: AwakePreferencesRepository
         private set
+
     lateinit var iconSwitcher: IconSwitcherPort
         private set
+
     lateinit var shortcutPublisher: ShortcutPublisherPort
         private set
+
     lateinit var enginePort: KeepAwakeEnginePort
         private set
+
     lateinit var widgetUpdater: WidgetUpdaterPort
         private set
+
     lateinit var controller: AwakeController
         private set
 
@@ -71,6 +86,8 @@ class AwakeApp : Application() {
     ) {
         startupSyncJob?.cancel()
         startupSyncJob = null
+        continuousSurfaceSyncJob?.cancel()
+        this.appScope = scope
         this.repository = repository
         this.iconSwitcher = iconSwitcher
         this.shortcutPublisher = shortcutPublisher
@@ -84,5 +101,18 @@ class AwakeApp : Application() {
             externalScope = scope,
             widgetPort = widgetUpdater
         )
+        // Continuous reactive synchronization across App Icon, Shortcuts, Widget, and Quick Settings Tile
+        continuousSurfaceSyncJob = scope.launch {
+            var isFirstEmission = true
+            repository.stateFlow.collectLatest { state ->
+                if (isFirstEmission) {
+                    isFirstEmission = false
+                    return@collectLatest
+                }
+                iconSwitcher.setCoffeeCupIcon(state.isAwake)
+                shortcutPublisher.publishShortcuts(state)
+                widgetUpdater.updateWidgets(state)
+            }
+        }
     }
 }
