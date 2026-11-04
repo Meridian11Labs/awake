@@ -52,4 +52,5 @@ For legal inquiries or support, please contact:
 
 **Meridian11 LLC**  
 Email: [meridian11labs@gmail.com](mailto:meridian11labs@gmail.com)  
+Repository: [https://github.com/Meridian11Labs/awake](https://github.com/Meridian11Labs/awake)  
 Copyright © 2026 Meridian11 LLC. All rights reserved.

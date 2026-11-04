@@ -25,9 +25,13 @@ Run:
 
 ## 2. Google Play Console -> Policy -> App Content Declarations
 
-### A. Privacy Policy URL
-- **URL to paste in Play Console:**  
-  `https://github.com/kuscher/awake/blob/main/PRIVACY_POLICY.md` *(or raw/GitHub Pages URL)*
+### A. Privacy Policy & Terms of Service URLs
+- **Privacy Policy URL to paste in Play Console:**  
+  `https://github.com/Meridian11Labs/awake/blob/main/PRIVACY_POLICY.md`
+- **Terms of Service URL:**  
+  `https://github.com/Meridian11Labs/awake/blob/main/TERMS_OF_SERVICE.md`
+- **Repository Home:**  
+  `https://github.com/Meridian11Labs/awake`
 - **In-App Access:** Available on the main Awake window footer (`About  •  Privacy Policy  •  Terms of Service  •  Accessibility Disclosure  •  © Meridian11 LLC`).
 
 ---
