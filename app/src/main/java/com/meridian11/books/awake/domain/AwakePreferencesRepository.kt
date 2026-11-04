@@ -101,7 +101,12 @@ class InMemoryAwakePreferencesRepository(
     }
 
     override suspend fun setAccessibilityDisclosureAccepted(accepted: Boolean) {
-        _stateFlow.update { it.copy(accessibilityDisclosureAccepted = accepted) }
+        _stateFlow.update { current ->
+            current.copy(
+                accessibilityDisclosureAccepted = accepted,
+                tapSimulationEnabled = if (!accepted) false else current.tapSimulationEnabled
+            )
+        }
     }
 
     override suspend fun setDirectToggleOnTap(enabled: Boolean) {
@@ -203,6 +208,9 @@ class DataStoreAwakePreferencesRepository(
     override suspend fun setAccessibilityDisclosureAccepted(accepted: Boolean) {
         dataStore.edit { prefs ->
             prefs[Keys.ACCESSIBILITY_DISCLOSURE] = accepted
+            if (!accepted) {
+                prefs[Keys.TAP_SIM_ENABLED] = false
+            }
         }
     }
 

@@ -1,6 +1,5 @@
 package com.meridian11.books.awake.ui
 
-import android.app.AlertDialog
 import android.app.StatusBarManager
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -37,8 +36,7 @@ import kotlinx.coroutines.launch
  * Full Desktop/Googlebook Control & Settings Window built in Jetpack Compose.
  *
  * Uses an opaque Material 3 Expressive surface with a seamless transparent window caption bar
- * (`APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND`) and zero background blur (blur is reserved
- * exclusively for `QuickGlassPanelActivity`).
+ * (`APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND`) and zero background blur.
  */
 class SettingsDialogActivity : AppCompatActivity() {
 
@@ -92,24 +90,11 @@ class SettingsDialogActivity : AppCompatActivity() {
                     if (app != null) {
                         uiScope.launch {
                             val current = app.repository.stateFlow.first()
-                            if (desired && !current.accessibilityDisclosureAccepted) {
-                                showProminentDisclosureDialog(onAccepted = {
-                                    uiScope.launch {
-                                        app.repository.setAccessibilityDisclosureAccepted(true)
-                                        app.repository.setTapSimulationConfig(
-                                            enabled = true,
-                                            intervalSeconds = current.tapIntervalSeconds
-                                        )
-                                        app.controller.syncCurrentState()
-                                    }
-                                })
-                            } else {
-                                app.repository.setTapSimulationConfig(
-                                    enabled = desired,
-                                    intervalSeconds = current.tapIntervalSeconds
-                                )
-                                app.controller.syncCurrentState()
-                            }
+                            app.repository.setTapSimulationConfig(
+                                enabled = desired,
+                                intervalSeconds = current.tapIntervalSeconds
+                            )
+                            app.controller.syncCurrentState()
                         }
                     }
                 },
@@ -117,19 +102,31 @@ class SettingsDialogActivity : AppCompatActivity() {
                     selectTapInterval(seconds)
                 },
                 onOpenAccessibilitySetup = {
+                    openSystemAccessibilitySettings()
+                },
+                onAcceptAccessibilityDisclosure = { enableTapSimAfter, openSystemSettingsAfter ->
                     if (app != null) {
                         uiScope.launch {
                             val current = app.repository.stateFlow.first()
-                            if (!current.accessibilityDisclosureAccepted) {
-                                showProminentDisclosureDialog(onAccepted = {
-                                    uiScope.launch {
-                                        app.repository.setAccessibilityDisclosureAccepted(true)
-                                        openSystemAccessibilitySettings()
-                                    }
-                                })
-                            } else {
+                            app.repository.setAccessibilityDisclosureAccepted(true)
+                            if (enableTapSimAfter) {
+                                app.repository.setTapSimulationConfig(
+                                    enabled = true,
+                                    intervalSeconds = current.tapIntervalSeconds
+                                )
+                            }
+                            app.controller.syncCurrentState()
+                            if (openSystemSettingsAfter || (enableTapSimAfter && !isAccessibilityEnabledState)) {
                                 openSystemAccessibilitySettings()
                             }
+                        }
+                    }
+                },
+                onRevokeAccessibilityConsent = {
+                    if (app != null) {
+                        uiScope.launch {
+                            app.repository.setAccessibilityDisclosureAccepted(false)
+                            app.controller.syncCurrentState()
                         }
                     }
                 },
@@ -240,20 +237,6 @@ class SettingsDialogActivity : AppCompatActivity() {
             }
         } catch (_: Throwable) {
         }
-    }
-
-    private fun showProminentDisclosureDialog(onAccepted: () -> Unit) {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.disclosure_title)
-            .setMessage(R.string.disclosure_message)
-            .setPositiveButton(R.string.disclosure_accept) { dialog, _ ->
-                dialog.dismiss()
-                onAccepted()
-            }
-            .setNegativeButton(R.string.disclosure_decline) { dialog, _ ->
-                dialog.dismiss()
-            }
-            .show()
     }
 
     private fun openSystemAccessibilitySettings() {

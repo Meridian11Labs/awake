@@ -30,3 +30,7 @@ captures/
 
 # macOS
 .DS_Store
+
+# Signing keystores
+*.jks
+keystore.properties
