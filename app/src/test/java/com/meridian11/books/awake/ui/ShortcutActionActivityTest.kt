@@ -65,7 +65,7 @@ class ShortcutActionActivityTest {
         }
 
     @Test
-    fun `ACTION_SHORTCUT_TOGGLE_TAP_SIM toggles tapSimulationEnabled and finishes`() =
+    fun `ACTION_SHORTCUT_TOGGLE_AWAKE toggles Keep Awake ON and finishes`() =
         runTest(UnconfinedTestDispatcher()) {
             app.configureDependencies(
                 repository = repository,
@@ -75,13 +75,13 @@ class ShortcutActionActivityTest {
                 scope = backgroundScope
             )
 
-            val intent = Intent(AndroidShortcutPublisher.ACTION_SHORTCUT_TOGGLE_TAP_SIM)
+            val intent = Intent(AndroidShortcutPublisher.ACTION_SHORTCUT_TOGGLE_AWAKE)
             val activity = Robolectric.buildActivity(ShortcutActionActivity::class.java, intent)
                 .create()
                 .get()
 
             assertTrue(activity.isFinishing)
-            val state = repository.stateFlow.first()
-            assertTrue(state.tapSimulationEnabled)
+            assertTrue(repository.stateFlow.first().isAwake)
+            assertEquals(true, iconPort.lastIsFullCup)
         }
 }

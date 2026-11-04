@@ -9,7 +9,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Zero-window trampoline Activity invoked by right-click App Shortcuts on the
- * Googlebook Taskbar icon (Toggle Status, Cycle Duration Preset, or Toggle Tap Simulator).
+ * Googlebook Taskbar icon (Toggle Status or Cycle Duration Preset).
  */
 class ShortcutActionActivity : Activity() {
 
@@ -27,9 +27,6 @@ class ShortcutActionActivity : Activity() {
                     }
                     AndroidShortcutPublisher.ACTION_SHORTCUT_CYCLE_TIMER -> {
                         app.controller.cycleDurationPresetAndApply()
-                    }
-                    AndroidShortcutPublisher.ACTION_SHORTCUT_TOGGLE_TAP_SIM -> {
-                        app.controller.toggleTapSimulation()
                     }
                 }
             }

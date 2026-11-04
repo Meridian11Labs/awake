@@ -80,7 +80,7 @@ class AwakeSquircleWidgetProviderTest {
         }
 
     @Test
-    fun `expanded widget controls update duration and tap simulation and synchronize all surfaces`() =
+    fun `expanded and medium widget duration controls update the timer and synchronize all surfaces`() =
         runTest(UnconfinedTestDispatcher()) {
             app.configureDependencies(
                 repository = repository,
@@ -107,16 +107,17 @@ class AwakeSquircleWidgetProviderTest {
             assertEquals(true, iconPort.lastIsFullCup)
             assertEquals(60, widgetPort.lastState?.durationMinutes)
 
-            // Tap Tap Sim toggle on expanded widget -> toggles tap simulation ON
+            // Tap the duration cycle pill on the medium widget -> 60m moves on to 120m, still awake
             receiver.onReceive(
                 app,
                 Intent(app, AwakeSquircleWidgetProvider::class.java).apply {
-                    action = AwakeSquircleWidgetProvider.ACTION_WIDGET_TOGGLE_TAP_SIM
+                    action = AwakeSquircleWidgetProvider.ACTION_WIDGET_CYCLE_DURATION
                 }
             )
-            val afterTapSim = repository.stateFlow.first()
-            assertTrue("Tapping Tap Sim on expanded widget must enable tap simulation", afterTapSim.tapSimulationEnabled)
-            assertEquals(true, widgetPort.lastState?.tapSimulationEnabled)
+            val afterCycle = repository.stateFlow.first()
+            assertTrue("Cycling duration must keep Keep Awake active", afterCycle.isAwake)
+            assertEquals(120, afterCycle.durationMinutes)
+            assertEquals(120, widgetPort.lastState?.durationMinutes)
         }
 
     @Test
