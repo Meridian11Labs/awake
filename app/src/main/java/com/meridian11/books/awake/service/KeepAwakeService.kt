@@ -19,7 +19,6 @@ import android.view.Display
 import androidx.core.app.NotificationCompat
 import com.meridian11.books.awake.AwakeApp
 import com.meridian11.books.awake.R
-import com.meridian11.books.awake.domain.AwakeState
 import com.meridian11.books.awake.platform.AndroidShortcutPublisher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -99,39 +98,30 @@ class KeepAwakeService : Service() {
 
         val allowDimming = intent?.getBooleanExtra(EXTRA_ALLOW_DIMMING, false) ?: false
         val durationMinutes = intent?.getIntExtra(EXTRA_DURATION_MINUTES, 0) ?: 0
-        val tapSimEnabled = intent?.getBooleanExtra(EXTRA_TAP_SIM_ENABLED, false) ?: false
-        val tapIntervalSec = intent?.getIntExtra(EXTRA_TAP_INTERVAL_SEC, 60) ?: 60
 
         val notification = buildOngoingNotification(
             durationMinutes = durationMinutes,
-            tapSimEnabled = tapSimEnabled,
-            tapIntervalSec = tapIntervalSec,
             allowDimming = allowDimming
         )
 
         startForegroundCompat(notification)
         acquireAndScheduleWakeLockRenewal(allowScreenDimming = allowDimming)
 
-        serviceScope.launch {
-            val state = app?.repository?.stateFlow?.first()
-            if (state != null) {
-                if (intent == null) {
-                    // Service was restarted by OS (START_STICKY) — reconcile from persisted state
-                    if (!state.isAwake) {
-                        stopSelf()
-                        return@launch
-                    }
-                    acquireAndScheduleWakeLockRenewal(allowScreenDimming = state.allowScreenDimming)
-                    val syncedNotification = buildOngoingNotification(
-                        durationMinutes = state.durationMinutes,
-                        tapSimEnabled = state.tapSimulationEnabled,
-                        tapIntervalSec = state.tapIntervalSeconds,
-                        allowDimming = state.allowScreenDimming
-                    )
-                    getSystemService(NotificationManager::class.java)
-                        ?.notify(NOTIFICATION_ID, syncedNotification)
+        if (intent == null) {
+            // Service was restarted by OS (START_STICKY) — reconcile from persisted state
+            serviceScope.launch {
+                val state = app?.repository?.stateFlow?.first() ?: return@launch
+                if (!state.isAwake) {
+                    stopSelf()
+                    return@launch
                 }
-                KeepAwakeAccessibilityService.instance?.applyState(state)
+                acquireAndScheduleWakeLockRenewal(allowScreenDimming = state.allowScreenDimming)
+                val syncedNotification = buildOngoingNotification(
+                    durationMinutes = state.durationMinutes,
+                    allowDimming = state.allowScreenDimming
+                )
+                getSystemService(NotificationManager::class.java)
+                    ?.notify(NOTIFICATION_ID, syncedNotification)
             }
         }
 
@@ -219,8 +209,6 @@ class KeepAwakeService : Service() {
 
     private fun buildOngoingNotification(
         durationMinutes: Int,
-        tapSimEnabled: Boolean,
-        tapIntervalSec: Int,
         allowDimming: Boolean
     ): Notification {
         val stopIntent = Intent(this, KeepAwakeService::class.java).apply {
@@ -263,7 +251,6 @@ class KeepAwakeService : Service() {
         val modeDetails = buildList {
             add("Duration: $durationText")
             if (allowDimming) add("Dimming Allowed") else add("Full Brightness Lock")
-            if (tapSimEnabled) add("Tap Sim: ${tapIntervalSec}s")
         }.joinToString(" • ")
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
@@ -297,7 +284,6 @@ class KeepAwakeService : Service() {
         wakeLockRenewalJob = null
         unregisterHardwareMonitors()
         wakeLockEngine.release()
-        KeepAwakeAccessibilityService.instance?.applyState(AwakeState(isAwake = false))
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -315,7 +301,5 @@ class KeepAwakeService : Service() {
 
         const val EXTRA_DURATION_MINUTES = "extra_duration_minutes"
         const val EXTRA_ALLOW_DIMMING = "extra_allow_dimming"
-        const val EXTRA_TAP_SIM_ENABLED = "extra_tap_sim_enabled"
-        const val EXTRA_TAP_INTERVAL_SEC = "extra_tap_interval_sec"
     }
 }

@@ -340,34 +340,6 @@ private fun MaterialAddIcon(tint: Color, modifier: Modifier = Modifier) {
 }
 
 /**
- * Material Design Themed Checkmark or Chevron Vector Icon.
- */
-@Composable
-private fun MaterialStatusIcon(isEnabled: Boolean, tint: Color, modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier.size(14.dp)) {
-        val w = size.width
-        val h = size.height
-        val stroke = 2.dp.toPx()
-        val path = Path().apply {
-            if (isEnabled) {
-                moveTo(w * 0.18f, h * 0.52f)
-                lineTo(w * 0.42f, h * 0.76f)
-                lineTo(w * 0.84f, h * 0.26f)
-            } else {
-                moveTo(w * 0.35f, h * 0.22f)
-                lineTo(w * 0.68f, h * 0.5f)
-                lineTo(w * 0.35f, h * 0.78f)
-            }
-        }
-        drawPath(
-            path = path,
-            color = tint,
-            style = Stroke(width = stroke, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        )
-    }
-}
-
-/**
  * Custom Material 3 Expressive 52dp x 30dp Pill Switch in Jetpack Compose.
  */
 @Composable
@@ -427,8 +399,7 @@ fun AwakeM3Switch(
 }
 
 /**
- * Single-line Segmented Pill Button Track used for Duration (`Infinite | 30m | 1h | 2h`)
- * and Tap Interval (`15s | 30s | 60s | 120s`).
+ * Single-line Segmented Pill Button Track used for Duration (`Infinite | 30m | 1h | 2h`).
  */
 @Composable
 fun <T> SegmentedPillRow(
@@ -492,24 +463,17 @@ fun <T> SegmentedPillRow(
 enum class LegalSubpageTab {
     ABOUT,
     PRIVACY,
-    TERMS,
-    ACCESSIBILITY
+    TERMS
 }
 
 @Composable
 fun SettingsWindowScreen(
     state: AwakeState,
-    isAccessibilityEnabled: Boolean,
     onToggleAwake: () -> Unit,
     onSelectDuration: (Int) -> Unit,
     onToggleDirectTap: (Boolean) -> Unit,
     onAddQsTile: () -> Unit,
     onPinWidget: () -> Unit,
-    onToggleTapSimulation: (Boolean) -> Unit,
-    onSelectTapInterval: (Int) -> Unit,
-    onOpenAccessibilitySetup: () -> Unit,
-    onAcceptAccessibilityDisclosure: (enableTapSimAfter: Boolean, openSystemSettingsAfter: Boolean) -> Unit = { _, _ -> },
-    onRevokeAccessibilityConsent: () -> Unit = {},
     onUpdateGuardrails: (
         lidClose: Boolean,
         lowBattery: Boolean,
@@ -524,29 +488,6 @@ fun SettingsWindowScreen(
         .asPaddingValues()
 
     var activeLegalTab by remember { mutableStateOf<LegalSubpageTab?>(null) }
-    var showDisclosureModal by remember { mutableStateOf(false) }
-    var pendingEnableTapSim by remember { mutableStateOf(false) }
-    var pendingOpenSystemSettings by remember { mutableStateOf(false) }
-
-    val handleToggleTapSim: (Boolean) -> Unit = { desired ->
-        if (desired && !state.accessibilityDisclosureAccepted) {
-            pendingEnableTapSim = true
-            pendingOpenSystemSettings = false
-            showDisclosureModal = true
-        } else {
-            onToggleTapSimulation(desired)
-        }
-    }
-
-    val handleOpenAccessibilitySetup: () -> Unit = {
-        if (!state.accessibilityDisclosureAccepted) {
-            pendingEnableTapSim = false
-            pendingOpenSystemSettings = true
-            showDisclosureModal = true
-        } else {
-            onOpenAccessibilitySetup()
-        }
-    }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -560,18 +501,9 @@ fun SettingsWindowScreen(
         if (currentLegalTab != null) {
             LegalAndAboutSubpageScreen(
                 selectedTab = currentLegalTab,
-                state = state,
-                isAccessibilityEnabled = isAccessibilityEnabled,
                 colors = colors,
                 onSelectTab = { activeLegalTab = it },
-                onBack = { activeLegalTab = null },
-                onReviewDisclosure = {
-                    pendingEnableTapSim = false
-                    pendingOpenSystemSettings = false
-                    showDisclosureModal = true
-                },
-                onRevokeConsent = onRevokeAccessibilityConsent,
-                onOpenSystemAccessibilitySettings = handleOpenAccessibilitySetup
+                onBack = { activeLegalTab = null }
             )
         } else if (isTwoColumn) {
             val scrollState = rememberScrollState()
@@ -593,21 +525,13 @@ fun SettingsWindowScreen(
                     ) {
                         HeroToggleCard(state = state, colors = colors, onToggleAwake = onToggleAwake)
                         DurationPresetsCard(state = state, colors = colors, onSelectDuration = onSelectDuration)
-                        DirectToggleCard(state = state, colors = colors, onToggleDirectTap = onToggleDirectTap)
                         QsAndWidgetCard(colors = colors, onAddQsTile = onAddQsTile, onPinWidget = onPinWidget)
                     }
                     Column(
                         modifier = Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        TapSimulationCard(
-                            state = state,
-                            isAccessibilityEnabled = isAccessibilityEnabled,
-                            colors = colors,
-                            onToggleTapSimulation = handleToggleTapSim,
-                            onSelectTapInterval = onSelectTapInterval,
-                            onOpenAccessibilitySetup = handleOpenAccessibilitySetup
-                        )
+                        DirectToggleCard(state = state, colors = colors, onToggleDirectTap = onToggleDirectTap)
                         GuardrailsCard(
                             state = state,
                             colors = colors,
@@ -634,14 +558,6 @@ fun SettingsWindowScreen(
                 DurationPresetsCard(state = state, colors = colors, onSelectDuration = onSelectDuration)
                 DirectToggleCard(state = state, colors = colors, onToggleDirectTap = onToggleDirectTap)
                 QsAndWidgetCard(colors = colors, onAddQsTile = onAddQsTile, onPinWidget = onPinWidget)
-                TapSimulationCard(
-                    state = state,
-                    isAccessibilityEnabled = isAccessibilityEnabled,
-                    colors = colors,
-                    onToggleTapSimulation = handleToggleTapSim,
-                    onSelectTapInterval = onSelectTapInterval,
-                    onOpenAccessibilitySetup = handleOpenAccessibilitySetup
-                )
                 GuardrailsCard(
                     state = state,
                     colors = colors,
@@ -653,25 +569,6 @@ fun SettingsWindowScreen(
                     onOpenTab = { activeLegalTab = it }
                 )
             }
-        }
-
-        if (showDisclosureModal) {
-            AccessibilityProminentDisclosureModal(
-                colors = colors,
-                onAccept = {
-                    val enableTap = pendingEnableTapSim
-                    val openSettings = pendingOpenSystemSettings
-                    showDisclosureModal = false
-                    pendingEnableTapSim = false
-                    pendingOpenSystemSettings = false
-                    onAcceptAccessibilityDisclosure(enableTap, openSettings)
-                },
-                onDecline = {
-                    showDisclosureModal = false
-                    pendingEnableTapSim = false
-                    pendingOpenSystemSettings = false
-                }
-            )
         }
     }
 }
@@ -852,7 +749,7 @@ private fun QsAndWidgetCard(
         )
         Spacer(modifier = Modifier.height(3.dp))
         Text(
-            text = "Quick Settings Tile: Tap system tray tile to toggle Awake, or long-press for Settings. Widget: Starts 1×1 by default — expand larger for duration & Tap Sim controls.",
+            text = "Quick Settings Tile: Tap system tray tile to toggle Awake, or long-press for Settings. Widget: Starts 1×1 by default — expand larger for duration controls.",
             fontFamily = AwakeSansFontFamily,
             fontSize = 12.sp,
             lineHeight = 16.sp,
@@ -909,108 +806,6 @@ private fun QsAndWidgetCard(
                     color = colors.chipUnselectedText,
                     maxLines = 1
                 )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TapSimulationCard(
-    state: AwakeState,
-    isAccessibilityEnabled: Boolean,
-    colors: AwakeThemeColors,
-    onToggleTapSimulation: (Boolean) -> Unit,
-    onSelectTapInterval: (Int) -> Unit,
-    onOpenAccessibilitySetup: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(26.dp))
-            .background(colors.cardBg)
-            .border(1.dp, colors.cardStroke, RoundedCornerShape(26.dp))
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "Simulate Tap / Click Fallback",
-                    fontFamily = AwakeSansFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = colors.textPrimary,
-                    maxLines = 1
-                )
-                Spacer(modifier = Modifier.height(3.dp))
-                Text(
-                    text = if (state.tapSimulationEnabled) {
-                        "Active: Simulating corner micro-tap every ${state.tapIntervalSeconds}s"
-                    } else {
-                        "Off: Micro-tap every ${state.tapIntervalSeconds}s when WakeLock can't be used"
-                    },
-                    fontFamily = AwakeSansFontFamily,
-                    fontSize = 12.sp,
-                    lineHeight = 16.sp,
-                    color = colors.textSecondary,
-                    modifier = Modifier.testTag("tv_tap_interval_summary")
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            AwakeM3Switch(
-                checked = state.tapSimulationEnabled,
-                onCheckedChange = onToggleTapSimulation,
-                colors = colors,
-                modifier = Modifier.testTag("switch_tap_simulation")
-            )
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-        SegmentedPillRow(
-            items = listOf(
-                15 to "15s",
-                30 to "30s",
-                60 to "60s",
-                120 to "120s"
-            ),
-            selectedValue = state.tapIntervalSeconds,
-            onSelect = onSelectTapInterval,
-            colors = colors,
-            tagPrefix = "btn_tap"
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(38.dp)
-                .clip(CircleShape)
-                .background(colors.tonalTrackBg)
-                .clickable { onOpenAccessibilitySetup() }
-                .padding(horizontal = 12.dp)
-                .testTag("btn_accessibility_setup"),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (isAccessibilityEnabled) {
-                MaterialStatusIcon(isEnabled = true, tint = colors.chipUnselectedText)
-                Spacer(modifier = Modifier.width(6.dp))
-            }
-            Text(
-                text = if (isAccessibilityEnabled) {
-                    "Accessibility Keep-Alive Service Enabled"
-                } else {
-                    "Enable Accessibility Service for Tap Simulation"
-                },
-                fontFamily = AwakeSansFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                color = colors.chipUnselectedText,
-                maxLines = 1
-            )
-            if (!isAccessibilityEnabled) {
-                Spacer(modifier = Modifier.width(6.dp))
-                MaterialStatusIcon(isEnabled = false, tint = colors.chipUnselectedText)
             }
         }
     }
@@ -1166,7 +961,7 @@ private fun GuardrailSwitchRow(
 
 /**
  * Subtle, centered footer row at the bottom of the main Settings window providing
- * one-click access to About, Privacy Policy, Terms of Service, and Accessibility Disclosure.
+ * one-click access to About, Privacy Policy, and Terms of Service.
  */
 @Composable
 private fun LegalFooterRow(
@@ -1199,13 +994,6 @@ private fun LegalFooterRow(
             testTag = "link_footer_terms",
             colors = colors,
             onClick = { onOpenTab(LegalSubpageTab.TERMS) }
-        )
-        FooterDot(colors)
-        SubtleFooterLink(
-            label = "Accessibility Disclosure",
-            testTag = "link_footer_accessibility",
-            colors = colors,
-            onClick = { onOpenTab(LegalSubpageTab.ACCESSIBILITY) }
         )
         FooterDot(colors)
         Text(
@@ -1250,20 +1038,14 @@ private fun FooterDot(colors: AwakeThemeColors) {
 }
 
 /**
- * In-App Subpage for About, Privacy Policy, Terms of Service, and Accessibility API Disclosure
- * owned by Meridian11 LLC.
+ * In-App Subpage for About, Privacy Policy, and Terms of Service owned by Meridian11 LLC.
  */
 @Composable
 private fun LegalAndAboutSubpageScreen(
     selectedTab: LegalSubpageTab,
-    state: AwakeState,
-    isAccessibilityEnabled: Boolean,
     colors: AwakeThemeColors,
     onSelectTab: (LegalSubpageTab) -> Unit,
-    onBack: () -> Unit,
-    onReviewDisclosure: () -> Unit,
-    onRevokeConsent: () -> Unit,
-    onOpenSystemAccessibilitySettings: () -> Unit
+    onBack: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     Column(
@@ -1327,8 +1109,7 @@ private fun LegalAndAboutSubpageScreen(
             val tabs = listOf(
                 Triple(LegalSubpageTab.ABOUT, "About", "tab_legal_about"),
                 Triple(LegalSubpageTab.PRIVACY, "Privacy Policy", "tab_legal_privacy"),
-                Triple(LegalSubpageTab.TERMS, "Terms of Service", "tab_legal_terms"),
-                Triple(LegalSubpageTab.ACCESSIBILITY, "Accessibility API", "tab_legal_accessibility")
+                Triple(LegalSubpageTab.TERMS, "Terms of Service", "tab_legal_terms")
             )
             tabs.forEach { (tab, title, tag) ->
                 val isSelected = selectedTab == tab
@@ -1394,14 +1175,14 @@ private fun LegalAndAboutSubpageScreen(
                         modifier = Modifier.testTag("tv_meridian11_ownership")
                     )
                     Text(
-                        text = "Awake is a zero-network, privacy-first utility engineered for Googlebooks, Chromebooks, and Android Desktop devices. It synchronizes your Taskbar coffee cup icon, Quick Settings tile, resizable 1×1-to-expanded desktop widget, Foreground WakeLock service, and optional Accessibility keep-alive fallback in real time.",
+                        text = "Awake keeps your Googlebook awake while you need it. Turn it on from the taskbar icon, the Quick Settings tile, or the widget, and it holds a wake lock until you turn it off, the timer ends, or a guardrail (lid closed, low battery) turns it off for you. It needs no internet connection.",
                         fontFamily = AwakeSansFontFamily,
                         fontSize = 13.sp,
                         lineHeight = 19.sp,
                         color = colors.textSecondary
                     )
                     Text(
-                        text = "Support & Legal Inquiries: meridian11labs@gmail.com • github.com/Meridian11Labs/awake",
+                        text = "Support: meridian11labs@gmail.com • github.com/Meridian11Labs/awake",
                         fontFamily = AwakeSansFontFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 12.sp,
@@ -1418,21 +1199,20 @@ private fun LegalAndAboutSubpageScreen(
                         color = colors.textPrimary
                     )
                     Text(
-                        text = "Effective Date: November 4, 2026 • Data Controller: Meridian11 LLC (meridian11labs@gmail.com)",
+                        text = "Effective Date: November 4, 2026 • Contact: meridian11labs@gmail.com",
                         fontFamily = AwakeSansFontFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp,
                         color = colors.textSecondary
                     )
                     Text(
-                        text = "1. Zero Data Collection & Zero Network Access\n" +
-                            "Awake does NOT request the android.permission.INTERNET permission. Awake does not collect, store, transmit, share, or sell any personal or sensitive user data, device identifiers, usage telemetry, crash logs, or location data to Meridian11 LLC or any third party.\n\n" +
-                            "2. Local-Only Preferences (Jetpack DataStore)\n" +
-                            "Your preferences (keep-awake state, timer duration, smart guardrails, tap interval, and Accessibility disclosure consent) are stored strictly locally on your device using Android Jetpack DataStore and are permanently deleted when you uninstall the app.\n\n" +
-                            "3. AccessibilityService API Privacy Guarantee\n" +
-                            "If you explicitly accept the in-app Prominent Disclosure and enable the optional Awake Accessibility Keep-Alive Service, it is used strictly to: (a) attach a 1×1 transparent keep-screen-on window overlay (TYPE_ACCESSIBILITY_OVERLAY), and (b) optionally dispatch a 1-millisecond micro-tap gesture at coordinate (1, 1) at your selected interval. Awake sets canRetrieveWindowContent=\"false\" and accessibilityEventTypes=\"\". It cannot and does not read screen content, inspect window hierarchies, capture keystrokes, or observe your activity in any app.\n\n" +
-                            "4. Foreground Service (specialUse) & On-Device Guardrails\n" +
-                            "While Awake is active, a local Foreground Service holds a PowerManager WakeLock and monitors battery level, AC charger state, and display/lid state strictly in memory on your device to enforce your configured safety guardrails.",
+                        text = "No internet access\n" +
+                            "Awake does not have the internet permission. It cannot send anything off your device.\n\n" +
+                            "No data collected or shared\n" +
+                            "Awake collects no personal data and shares nothing with Meridian11 LLC or anyone else. There are no ads, analytics, or crash reports.\n\n" +
+                            "Settings stay on your device\n" +
+                            "Your settings (on or off, timer, guardrails) are stored on this device only and are deleted when you uninstall Awake. While Awake is on, it checks the battery level, charger, and display state on the device to apply your guardrails; none of this is stored or sent anywhere.\n\n" +
+                            "This policy is also at https://meridian11.com/privacy/awake. Questions: meridian11labs@gmail.com.",
                         fontFamily = AwakeSansFontFamily,
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
@@ -1457,233 +1237,18 @@ private fun LegalAndAboutSubpageScreen(
                         color = colors.textSecondary
                     )
                     Text(
-                        text = "1. Ownership & License Grant\n" +
-                            "Awake ('the Application') is owned, built, and copyrighted by Meridian11 LLC. All rights reserved. Meridian11 LLC grants you a personal, revocable, non-exclusive, non-transferable license to use the Application on your compatible Android and Googlebook devices.\n\n" +
-                            "2. Thermal, Display & Battery Safety Responsibility\n" +
-                            "Awake is designed to override normal display sleep and system suspend timers at your direction. Keeping a display or processor awake continuously consumes battery power and generates heat. We strongly recommend keeping 'Backpack Safety: Auto-Off When Lid Closes' and 'Battery Guard: Auto-Off Below 20% Unplugged' enabled at all times. You assume full responsibility for preventing device overheating, display image retention, or battery depletion.\n\n" +
-                            "3. Enterprise & Organizational Policies\n" +
-                            "Use of the optional 'Simulate Tap / Click Fallback' feature may interact with idle-timeout policies configured by your employer or school administrator. You are solely responsible for ensuring your use of Awake complies with your organization's acceptable-use and security policies.\n\n" +
-                            "4. Disclaimer of Warranties & Limitation of Liability\n" +
-                            "THE APPLICATION IS PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY LAW, MERIDIAN11 LLC SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR HARDWARE DAMAGES ARISING OUT OF YOUR USE OF THE APPLICATION.",
+                        text = "1. License\n" +
+                            "Awake is owned by Meridian11 LLC. You may use it on your own devices under a personal, non-exclusive, non-transferable license.\n\n" +
+                            "2. Battery and heat\n" +
+                            "Keeping a screen and processor awake uses battery and makes heat. We recommend keeping 'Backpack Safety' and 'Battery Guard' turned on. You are responsible for your device's battery, temperature, and screen.\n\n" +
+                            "3. No warranty\n" +
+                            "THE APPLICATION IS PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY LAW, MERIDIAN11 LLC SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR HARDWARE DAMAGES ARISING OUT OF YOUR USE OF THE APPLICATION.\n\n" +
+                            "Questions: meridian11labs@gmail.com",
                         fontFamily = AwakeSansFontFamily,
                         fontSize = 12.sp,
                         lineHeight = 18.sp,
                         color = colors.textSecondary,
                         modifier = Modifier.testTag("tv_legal_terms_body")
-                    )
-                }
-
-                LegalSubpageTab.ACCESSIBILITY -> {
-                    Text(
-                        text = "AccessibilityService API Disclosure & Consent",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = colors.textPrimary
-                    )
-                    Text(
-                        text = "In-App Consent Status: ${if (state.accessibilityDisclosureAccepted) "Accepted" else "Not Accepted"} • System Service: ${if (isAccessibilityEnabled) "Enabled" else "Disabled"}",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
-                        color = colors.chipSelectedBg,
-                        modifier = Modifier.testTag("tv_legal_consent_status")
-                    )
-                    Text(
-                        text = "Why Awake uses the Android AccessibilityService API:\n" +
-                            "• On enterprise-managed Googlebooks and desktop configurations where standard PowerManager WakeLocks are restricted, Awake uses KeepAwakeAccessibilityService only after your explicit in-app consent to:\n" +
-                            "  1. Attach an invisible 1×1 pixel keep-screen-on overlay (TYPE_ACCESSIBILITY_OVERLAY).\n" +
-                            "  2. Optionally dispatch a 1-millisecond stationary micro-tap (dispatchGesture) at screen coordinate (1, 1) every 15–120 seconds when 'Simulate Tap / Click Fallback' is enabled.\n\n" +
-                            "Strict Privacy & Security Protections:\n" +
-                            "• canRetrieveWindowContent=\"false\" — Awake cannot read screen text or UI elements.\n" +
-                            "• accessibilityEventTypes=\"\" — Awake listens to zero accessibility events or keystrokes.\n" +
-                            "• isAccessibilityTool=\"false\" — Declared transparently as a user-initiated keep-awake utility.\n" +
-                            "• Hard Consent Gate — Even if enabled in Android System Settings, Awake's AccessibilityService remains completely inactive unless in-app Prominent Disclosure consent is accepted.",
-                        fontFamily = AwakeSansFontFamily,
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        color = colors.textSecondary
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        if (state.accessibilityDisclosureAccepted) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(38.dp)
-                                    .clip(CircleShape)
-                                    .background(colors.heroActiveBg)
-                                    .clickable { onRevokeConsent() }
-                                    .padding(horizontal = 14.dp)
-                                    .testTag("btn_revoke_accessibility_consent"),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Revoke Accessibility Consent & Disable Fallback",
-                                    fontFamily = AwakeSansFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    color = colors.textPrimary,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(38.dp)
-                                    .clip(CircleShape)
-                                    .background(colors.chipSelectedBg)
-                                    .clickable { onReviewDisclosure() }
-                                    .padding(horizontal = 14.dp)
-                                    .testTag("btn_open_disclosure_from_legal"),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "Review & Accept Prominent Disclosure",
-                                    fontFamily = AwakeSansFontFamily,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp,
-                                    color = colors.chipSelectedText,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .height(38.dp)
-                                .clip(CircleShape)
-                                .background(colors.tonalTrackBg)
-                                .clickable { onOpenSystemAccessibilitySettings() }
-                                .padding(horizontal = 16.dp)
-                                .testTag("btn_open_system_a11y_from_legal"),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "System Accessibility Settings",
-                                fontFamily = AwakeSansFontFamily,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                color = colors.chipUnselectedText,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Standalone Google Play-compliant Prominent Disclosure Modal for the AccessibilityService API.
- * Must be explicitly accepted ("Agree & Continue") before enabling tap simulation or opening
- * Android System Accessibility Settings.
- */
-@Composable
-private fun AccessibilityProminentDisclosureModal(
-    colors: AwakeThemeColors,
-    onAccept: () -> Unit,
-    onDecline: () -> Unit
-) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        // Sibling backdrop scrim so it does not merge semantics of the modal card and buttons
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0x990F172A))
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) { /* Consume background clicks */ }
-        )
-
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .width(560.dp)
-                .verticalScroll(rememberScrollState())
-                .clip(RoundedCornerShape(28.dp))
-                .background(colors.cardBg)
-                .border(1.dp, colors.cardStroke, RoundedCornerShape(28.dp))
-                .padding(22.dp)
-                .testTag("dialog_accessibility_disclosure"),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                text = "Prominent Disclosure: AccessibilityService API",
-                fontFamily = AwakeSansFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 17.sp,
-                color = colors.textPrimary
-            )
-            Text(
-                text = "To keep your Googlebook or Android desktop awake when enterprise or system policies ignore standard WakeLocks, Awake (by Meridian11 LLC) requests permission to use the Android AccessibilityService API.\n\n" +
-                    "• How Awake uses AccessibilityService:\n" +
-                    "1. Displays an invisible 1×1 pixel window overlay (TYPE_ACCESSIBILITY_OVERLAY) with FLAG_KEEP_SCREEN_ON while Awake is active.\n" +
-                    "2. When 'Simulate Tap / Click Fallback' is turned on, dispatches a single 1-millisecond micro-tap gesture (dispatchGesture) at screen coordinate (1, 1) every 15–120 seconds.\n\n" +
-                    "• Privacy & Data Guarantee:\n" +
-                    "Awake sets canRetrieveWindowContent=\"false\" and listens to zero accessibility events. Awake does NOT read your screen, monitor apps, log keystrokes, or collect, store, or share any personal or sensitive user data. No internet permission is requested.\n\n" +
-                    "You can decline now and still use Awake's standard WakeLock mode, or revoke this consent at any time in Awake → Accessibility Disclosure.",
-                fontFamily = AwakeSansFontFamily,
-                fontSize = 12.sp,
-                lineHeight = 17.sp,
-                color = colors.textSecondary
-            )
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 6.dp),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .height(38.dp)
-                        .clip(CircleShape)
-                        .background(colors.tonalTrackBg)
-                        .clickable { onDecline() }
-                        .padding(horizontal = 20.dp)
-                        .testTag("btn_disclosure_decline"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Decline",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = colors.chipUnselectedText
-                    )
-                }
-                Spacer(modifier = Modifier.width(10.dp))
-                Box(
-                    modifier = Modifier
-                        .height(38.dp)
-                        .clip(CircleShape)
-                        .background(colors.chipSelectedBg)
-                        .clickable { onAccept() }
-                        .padding(horizontal = 20.dp)
-                        .testTag("btn_disclosure_accept"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Agree & Continue",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = colors.chipSelectedText
                     )
                 }
             }
