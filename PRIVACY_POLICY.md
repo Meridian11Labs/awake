@@ -71,4 +71,5 @@ If you have any questions or concerns regarding this Privacy Policy or Awake's p
 
 **Meridian11 LLC**  
 Email: [meridian11labs@gmail.com](mailto:meridian11labs@gmail.com)  
+Repository: [https://github.com/Meridian11Labs/awake](https://github.com/Meridian11Labs/awake)  
 Copyright © 2026 Meridian11 LLC. All rights reserved.

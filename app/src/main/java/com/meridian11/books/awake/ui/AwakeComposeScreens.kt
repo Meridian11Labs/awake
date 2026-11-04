@@ -1401,7 +1401,7 @@ private fun LegalAndAboutSubpageScreen(
                         color = colors.textSecondary
                     )
                     Text(
-                        text = "Support & Legal Inquiries: meridian11labs@gmail.com",
+                        text = "Support & Legal Inquiries: meridian11labs@gmail.com • github.com/Meridian11Labs/awake",
                         fontFamily = AwakeSansFontFamily,
                         fontWeight = FontWeight.Medium,
                         fontSize = 12.sp,
