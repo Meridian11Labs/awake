@@ -26,9 +26,9 @@ Awake is a system utility designed to override normal display sleep and processo
 
 ---
 
-## 3. Enterprise, Workplace & School Policies
+## 3. Workplace & School Policies
 
-The optional **"Simulate Tap / Click Fallback"** feature uses the Android `AccessibilityService` API (`dispatchGesture`) to prevent idle-timeout screen locks when standard WakeLocks are restricted. You are solely responsible for ensuring that your use of Awake complies with any acceptable-use, security, or device-management policies established by your employer, school, or IT administrator.
+You are solely responsible for ensuring that your use of Awake complies with any acceptable-use, security, or device-management policies established by your employer, school, or IT administrator. Awake keeps a device awake only through Android's standard wake locks and does not work around such policies.
 
 ---
 
