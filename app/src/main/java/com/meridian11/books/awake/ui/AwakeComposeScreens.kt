@@ -41,6 +41,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -872,21 +873,6 @@ private fun GuardrailsCard(
         )
 
         GuardrailSwitchRow(
-            label = "Plug-in Brew: Auto-Awake on AC Charger",
-            checked = state.autoAwakeOnChargerEnabled,
-            colors = colors,
-            testTag = "switch_auto_awake_charger",
-            onCheckedChange = {
-                onUpdateGuardrails(
-                    state.lidCloseAutoShutoffEnabled,
-                    state.lowBatteryCutoffEnabled,
-                    it,
-                    state.allowScreenDimming
-                )
-            }
-        )
-
-        GuardrailSwitchRow(
             label = "Allow Screen Dimming While Keeping Awake",
             checked = state.allowScreenDimming,
             colors = colors,
@@ -1159,8 +1145,14 @@ private fun LegalAndAboutSubpageScreen(
                         fontSize = 18.sp,
                         color = colors.textPrimary
                     )
+                    val context = LocalContext.current
+                    val versionName = remember(context) {
+                        runCatching {
+                            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+                        }.getOrNull() ?: "?"
+                    }
                     Text(
-                        text = "Version 2.0.0 • Package: com.meridian11.books.awake",
+                        text = "Version $versionName • Package: ${context.packageName}",
                         fontFamily = AwakeSansFontFamily,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp,

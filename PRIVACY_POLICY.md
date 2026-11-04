@@ -20,9 +20,8 @@ receives nothing from it.
 | Notifications (optional) | That notification, with its Turn off and +30 minutes buttons |
 | Run at startup | Resetting the app icon and the switch to off after the device restarts or Awake is updated |
 
-Awake can turn itself off when the battery runs low or the lid closes, and on when you connect the charger; you
-choose which of these it does in its settings. It learns of them from Android's own signals, which need no permission
-and are never stored or sent.
+Awake can turn itself off when the battery runs low or the lid closes; you choose which of these it does in its
+settings. It learns of them from Android's own signals, which need no permission and are never stored or sent.
 
 ## What Awake keeps
 

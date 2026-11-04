@@ -11,8 +11,8 @@ Made by **Meridian11 LLC**. Package `com.meridian11.books.awake`.
   a half-empty one when it is off.
 - **For as long as you choose:** until you turn it off, or 30 minutes, 1 hour or 2 hours. A notification shows that
   Awake is on, with Turn off and +30 minutes.
-- **Guards:** off when the battery drops below 20% unplugged and when the lid closes (both on by default); on when the
-  charger is connected (off by default); an option to let the screen dim while the device stays awake.
+- **Guards:** off when the battery drops below 20% unplugged and when the lid closes (both on by default); an option
+  to let the screen dim while the device stays awake.
 - **Quick to reach:** right-click the taskbar icon for its shortcuts, or set the icon to switch Awake at once without
   opening the window. The widget starts as one square and shows the timer and settings when made bigger.
 

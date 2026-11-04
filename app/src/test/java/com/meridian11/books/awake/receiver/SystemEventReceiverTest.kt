@@ -14,7 +14,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,25 +58,5 @@ class SystemEventReceiverTest {
 
             assertFalse("Boot must reset awake state to Empty Cup", repository.stateFlow.first().isAwake)
             assertEquals(false, iconPort.lastIsFullCup)
-        }
-
-    @Test
-    fun `ACTION_POWER_CONNECTED auto-enables Full Cup when autoAwakeOnChargerEnabled is true`() =
-        runTest(UnconfinedTestDispatcher()) {
-            repository.setAwakeState(isAwake = false, expiresAtEpochMillis = 0L)
-            app.configureDependencies(
-                repository = repository,
-                iconSwitcher = iconPort,
-                shortcutPublisher = shortcutPort,
-                enginePort = enginePort,
-                scope = backgroundScope
-            )
-
-            val receiver = SystemEventReceiver()
-            receiver.onReceive(app, Intent(Intent.ACTION_POWER_CONNECTED))
-
-            assertTrue(repository.stateFlow.first().isAwake)
-            assertEquals(true, iconPort.lastIsFullCup)
-            assertTrue(enginePort.isRunning)
         }
 }
