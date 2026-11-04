@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
  * Responsive Material 3 Expressive Coffee Cup Widget (`1x1` default squircle, resizable to `2x1` and `Expanded`).
  * - Default `1x1` (`COMPACT_1X1`): Full-bleed squircle coffee cup button (Half-Empty Pastel Blue when inactive, Filled Pastel Orange when active).
  * - Medium `2x1` (`MEDIUM_2X1`): Horizontal hero banner with coffee cup badge, Awake/Sleeping status, interactive Duration Cycle Pill (`Infinite | 30m | 1h | 2h`), and Settings button.
- * - Expanded (`EXPANDED`, `2x2+` / `3x2+`): Elevated Material 3 card with Hero Toggle Row, 4-button Segmented Duration Pills (`Infinite | 30m | 1h | 2h`), Tap Sim toggle, and Settings launch button.
+ * - Expanded (`EXPANDED`, `2x2+` / `3x2+`): Elevated Material 3 card with Hero Toggle Row, 4-button Segmented Duration Pills (`Infinite | 30m | 1h | 2h`), and Settings launch button.
  */
 class AwakeSquircleWidgetProvider : AppWidgetProvider() {
 
@@ -120,17 +120,6 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
                     }
                 }
             }
-            ACTION_WIDGET_TOGGLE_TAP_SIM -> {
-                val pendingResult = goAsync()
-                app.appScope.launch {
-                    try {
-                        val updated = app.controller.toggleTapSimulation()
-                        updateAllWidgets(context, updated)
-                    } finally {
-                        pendingResult?.finish()
-                    }
-                }
-            }
         }
     }
 
@@ -138,12 +127,10 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
         const val ACTION_WIDGET_TOGGLE = "com.meridian11.books.awake.action.WIDGET_TOGGLE"
         const val ACTION_WIDGET_CYCLE_DURATION = "com.meridian11.books.awake.action.WIDGET_CYCLE_DURATION"
         const val ACTION_WIDGET_SET_DURATION = "com.meridian11.books.awake.action.WIDGET_SET_DURATION"
-        const val ACTION_WIDGET_TOGGLE_TAP_SIM = "com.meridian11.books.awake.action.WIDGET_TOGGLE_TAP_SIM"
         const val EXTRA_DURATION_MINUTES = "extra_duration_minutes"
 
         private const val REQUEST_CODE_TOGGLE = 401
         private const val REQUEST_CODE_OPEN_SETTINGS = 402
-        private const val REQUEST_CODE_TAP_SIM = 403
         private const val REQUEST_CODE_CYCLE_DURATION = 404
         private const val REQUEST_CODE_DURATION_BASE = 410
 
@@ -239,11 +226,7 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
                     )
                     views.setTextViewText(
                         R.id.txt_widget_subtitle,
-                        if (state.isAwake) {
-                            if (state.tapSimulationEnabled) "Tap ${state.tapIntervalSeconds}s" else "Active"
-                        } else {
-                            "Normal"
-                        }
+                        if (state.isAwake) "Active" else "Normal"
                     )
                     val durChipText = when (state.durationMinutes) {
                         0 -> "∞"
@@ -325,25 +308,6 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
                         )
                     }
 
-                    // Tap Simulation Toggle Pill
-                    views.setTextViewText(
-                        R.id.btn_widget_tap_sim,
-                        if (state.tapSimulationEnabled) "Tap Sim: ON (${state.tapIntervalSeconds}s)" else "Tap Sim: OFF"
-                    )
-                    views.setInt(
-                        R.id.btn_widget_tap_sim,
-                        "setBackgroundResource",
-                        if (state.tapSimulationEnabled) R.drawable.bg_chip_selected else R.drawable.bg_segmented_track
-                    )
-                    views.setTextColor(
-                        R.id.btn_widget_tap_sim,
-                        if (state.tapSimulationEnabled) selectedTextColor else unselectedTextColor
-                    )
-                    views.setOnClickPendingIntent(
-                        R.id.btn_widget_tap_sim,
-                        createTapSimPendingIntent(context)
-                    )
-
                     // Open Settings Window Button
                     views.setOnClickPendingIntent(
                         R.id.btn_widget_open_settings,
@@ -356,9 +320,7 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
 
         private fun formatSubtitle(state: AwakeState): String {
             return if (state.isAwake) {
-                val durLabel = if (state.durationMinutes == 0) "Infinite" else "${state.durationMinutes}m timer"
-                val tapLabel = if (state.tapSimulationEnabled) " • Tap ${state.tapIntervalSeconds}s" else ""
-                "$durLabel$tapLabel"
+                if (state.durationMinutes == 0) "Infinite" else "${state.durationMinutes}m timer"
             } else {
                 val preset = if (state.durationMinutes == 0) "Infinite" else "${state.durationMinutes}m"
                 "Tap to activate ($preset preset)"
@@ -397,18 +359,6 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
             return PendingIntent.getBroadcast(
                 context,
                 REQUEST_CODE_DURATION_BASE + minutes,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        }
-
-        private fun createTapSimPendingIntent(context: Context): PendingIntent {
-            val intent = Intent(context, AwakeSquircleWidgetProvider::class.java).apply {
-                action = ACTION_WIDGET_TOGGLE_TAP_SIM
-            }
-            return PendingIntent.getBroadcast(
-                context,
-                REQUEST_CODE_TAP_SIM,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )

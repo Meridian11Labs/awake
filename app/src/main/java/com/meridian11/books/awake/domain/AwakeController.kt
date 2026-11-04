@@ -54,24 +54,6 @@ class AwakeController(
     }
 
     /**
-     * Toggles the simulated tap fallback on/off and updates live shortcuts/engines.
-     */
-    suspend fun toggleTapSimulation(): AwakeState = mutex.withLock {
-        val current = repository.stateFlow.first()
-        repository.setTapSimulationConfig(
-            enabled = !current.tapSimulationEnabled,
-            intervalSeconds = current.tapIntervalSeconds
-        )
-        val updated = repository.stateFlow.first()
-        if (updated.isAwake) {
-            enginePort.startOrUpdateKeepAwake(updated)
-        }
-        shortcutPort.publishShortcuts(updated)
-        widgetPort.updateWidgets(updated)
-        updated
-    }
-
-    /**
      * Refreshes engines, taskbar icon, right-click shortcuts, and squircle widget after settings are modified.
      */
     suspend fun syncCurrentState(): AwakeState = mutex.withLock {

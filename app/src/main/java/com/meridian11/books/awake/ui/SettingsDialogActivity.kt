@@ -3,12 +3,10 @@ package com.meridian11.books.awake.ui
 import android.app.StatusBarManager
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
-import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import android.view.KeyEvent
 import android.view.WindowInsetsController
 import android.widget.Toast
@@ -17,12 +15,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.core.view.WindowCompat
 import com.meridian11.books.awake.AwakeApp
 import com.meridian11.books.awake.R
 import com.meridian11.books.awake.domain.AwakeState
-import com.meridian11.books.awake.service.KeepAwakeAccessibilityService
 import com.meridian11.books.awake.service.KeepAwakeTileService
 import com.meridian11.books.awake.widget.AwakeSquircleWidgetProvider
 import kotlinx.coroutines.CoroutineScope
@@ -44,12 +40,9 @@ class SettingsDialogActivity : AppCompatActivity() {
 
     val isGlassBlurConfigured: Boolean = false
 
-    private var isAccessibilityEnabledState by mutableStateOf(false)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableSeamlessDesktopWindowHeader()
-        isAccessibilityEnabledState = KeepAwakeAccessibilityService.isAccessibilityServiceEnabled(this)
 
         val app = applicationContext as? AwakeApp
         setContent {
@@ -61,7 +54,6 @@ class SettingsDialogActivity : AppCompatActivity() {
 
             SettingsWindowScreen(
                 state = state,
-                isAccessibilityEnabled = isAccessibilityEnabledState,
                 onToggleAwake = {
                     if (app != null) {
                         uiScope.launch {
@@ -86,50 +78,6 @@ class SettingsDialogActivity : AppCompatActivity() {
                 onPinWidget = {
                     requestPinSquircleWidget()
                 },
-                onToggleTapSimulation = { desired ->
-                    if (app != null) {
-                        uiScope.launch {
-                            val current = app.repository.stateFlow.first()
-                            app.repository.setTapSimulationConfig(
-                                enabled = desired,
-                                intervalSeconds = current.tapIntervalSeconds
-                            )
-                            app.controller.syncCurrentState()
-                        }
-                    }
-                },
-                onSelectTapInterval = { seconds ->
-                    selectTapInterval(seconds)
-                },
-                onOpenAccessibilitySetup = {
-                    openSystemAccessibilitySettings()
-                },
-                onAcceptAccessibilityDisclosure = { enableTapSimAfter, openSystemSettingsAfter ->
-                    if (app != null) {
-                        uiScope.launch {
-                            val current = app.repository.stateFlow.first()
-                            app.repository.setAccessibilityDisclosureAccepted(true)
-                            if (enableTapSimAfter) {
-                                app.repository.setTapSimulationConfig(
-                                    enabled = true,
-                                    intervalSeconds = current.tapIntervalSeconds
-                                )
-                            }
-                            app.controller.syncCurrentState()
-                            if (openSystemSettingsAfter || (enableTapSimAfter && !isAccessibilityEnabledState)) {
-                                openSystemAccessibilitySettings()
-                            }
-                        }
-                    }
-                },
-                onRevokeAccessibilityConsent = {
-                    if (app != null) {
-                        uiScope.launch {
-                            app.repository.setAccessibilityDisclosureAccepted(false)
-                            app.controller.syncCurrentState()
-                        }
-                    }
-                },
                 onUpdateGuardrails = { lidClose, lowBattery, charger, dimming ->
                     if (app != null) {
                         uiScope.launch {
@@ -148,11 +96,6 @@ class SettingsDialogActivity : AppCompatActivity() {
                 }
             )
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        isAccessibilityEnabledState = KeepAwakeAccessibilityService.isAccessibilityServiceEnabled(this)
     }
 
     /**
@@ -182,18 +125,6 @@ class SettingsDialogActivity : AppCompatActivity() {
             } else {
                 app.controller.syncCurrentState()
             }
-        }
-    }
-
-    private fun selectTapInterval(seconds: Int) {
-        val app = applicationContext as? AwakeApp ?: return
-        uiScope.launch {
-            val current = app.repository.stateFlow.first()
-            app.repository.setTapSimulationConfig(
-                enabled = current.tapSimulationEnabled,
-                intervalSeconds = seconds
-            )
-            app.controller.syncCurrentState()
         }
     }
 
@@ -235,15 +166,6 @@ class SettingsDialogActivity : AppCompatActivity() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
-        } catch (_: Throwable) {
-        }
-    }
-
-    private fun openSystemAccessibilitySettings() {
-        try {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            })
         } catch (_: Throwable) {
         }
     }

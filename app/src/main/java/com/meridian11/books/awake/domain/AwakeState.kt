@@ -7,21 +7,15 @@ data class AwakeState(
     val isAwake: Boolean = false,
     val durationMinutes: Int = 0, // 0 = Indefinite, or 30, 60, 120, 240
     val sessionExpiresAtEpochMillis: Long = 0L,
-    val tapSimulationEnabled: Boolean = false,
-    val tapIntervalSeconds: Int = 60,
     val lowBatteryCutoffEnabled: Boolean = true,
     val lowBatteryThresholdPercent: Int = 20,
     val autoAwakeOnChargerEnabled: Boolean = false,
     val lidCloseAutoShutoffEnabled: Boolean = true,
     val allowScreenDimming: Boolean = false,
-    val accessibilityDisclosureAccepted: Boolean = false,
     val directToggleOnTap: Boolean = false // false = Open window on tap (default); true = Hide settings, tap icon to toggle
 ) {
     companion object {
         val DURATION_PRESETS = listOf(0, 30, 60, 120)
-        val TAP_INTERVAL_PRESETS = listOf(15, 30, 60, 120, 300)
-        const val MIN_TAP_INTERVAL_SECONDS = 5
-        const val MAX_TAP_INTERVAL_SECONDS = 3600
     }
 }
 
@@ -35,7 +29,7 @@ interface IconSwitcherPort {
 }
 
 /**
- * Port for publishing and re-binding the 4 right-click Taskbar dynamic shortcuts
+ * Port for publishing and re-binding the 3 right-click Taskbar dynamic shortcuts
  * to the currently enabled <activity-alias>.
  */
 interface ShortcutPublisherPort {

@@ -6,7 +6,6 @@
 -keep class com.meridian11.books.awake.ui.ShortcutActionActivity { *; }
 -keep class com.meridian11.books.awake.ui.SettingsDialogActivity { *; }
 -keep class com.meridian11.books.awake.service.KeepAwakeService { *; }
--keep class com.meridian11.books.awake.service.KeepAwakeAccessibilityService { *; }
 -keep class com.meridian11.books.awake.service.KeepAwakeTileService { *; }
 -keep class com.meridian11.books.awake.widget.AwakeSquircleWidgetProvider { *; }
 -keep class com.meridian11.books.awake.receiver.SystemEventReceiver { *; }
