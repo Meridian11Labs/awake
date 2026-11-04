@@ -139,16 +139,13 @@
                 android:resource="@xml/awake_squircle_widget_info" />
         </receiver>
 
-        <!-- System Boot & Power Event Receiver -->
+        <!-- Boot and app-update receiver: resets the switch and the icon to off -->
         <receiver
             android:name=".receiver.SystemEventReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
-                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
-                <action android:name="android.intent.action.BATTERY_LOW" />
             </intent-filter>
         </receiver>
 

@@ -124,6 +124,8 @@ class AwakeController(
 
     /**
      * Evaluates "Plug-in Brew" (Auto-Awake on AC Charger) when power is connected or disconnected.
+     * Not wired up since 2.1.0: Android 8+ doesn't deliver the charger broadcasts to manifest receivers, so the
+     * option is hidden until a receiver that works while Awake is off exists.
      */
     suspend fun onChargerStateChanged(isPluggedIn: Boolean) = mutex.withLock {
         val current = repository.stateFlow.first()

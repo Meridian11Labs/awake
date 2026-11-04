@@ -9,7 +9,6 @@ Keep awake until you turn it off, or for 30 minutes, 1 hour or 2 hours. While Aw
 Guards you can switch on and off
 • Battery guard: turns Awake off when the battery drops below 20% while unplugged (on by default).
 • Lid guard: turns Awake off when you close the lid, so your laptop sleeps in your bag (on by default).
-• Charger: turns Awake on when you plug in the charger (off by default).
 • Screen dimming: lets the screen dim while the laptop stays awake.
 
 Quick to reach
