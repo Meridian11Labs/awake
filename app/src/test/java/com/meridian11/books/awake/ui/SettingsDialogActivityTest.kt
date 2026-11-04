@@ -1,5 +1,6 @@
 package com.meridian11.books.awake.ui
 
+import android.Manifest
 import android.content.Intent
 import android.service.quicksettings.TileService
 import androidx.compose.ui.test.assertIsDisplayed
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowAlertDialog
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -82,6 +84,29 @@ class SettingsDialogActivityTest {
             composeRule.onNodeWithTag("switch_allow_dimming").performScrollTo().performClick()
             composeRule.waitForIdle()
             assertTrue(repository.stateFlow.first().allowScreenDimming)
+        }
+
+    @Test
+    fun `turning Awake on from the window asks for the notification permission`() =
+        runTest(UnconfinedTestDispatcher()) {
+            app.configureDependencies(
+                repository = repository,
+                iconSwitcher = iconPort,
+                shortcutPublisher = shortcutPort,
+                enginePort = enginePort,
+                scope = backgroundScope
+            )
+
+            val activity = Robolectric.buildActivity(SettingsDialogActivity::class.java)
+                .setup()
+                .get()
+
+            composeRule.onNodeWithTag("switch_master_awake").performClick()
+            composeRule.waitForIdle()
+
+            val request = shadowOf(activity).lastRequestedPermission
+            assertNotNull("Turning Awake on must ask for POST_NOTIFICATIONS", request)
+            assertTrue(request!!.requestedPermissions.contains(Manifest.permission.POST_NOTIFICATIONS))
         }
 
     @Test

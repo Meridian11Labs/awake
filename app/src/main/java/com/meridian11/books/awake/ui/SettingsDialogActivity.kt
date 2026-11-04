@@ -1,8 +1,10 @@
 package com.meridian11.books.awake.ui
 
+import android.Manifest
 import android.app.StatusBarManager
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.drawable.Icon
 import android.os.Build
@@ -55,6 +57,7 @@ class SettingsDialogActivity : AppCompatActivity() {
             SettingsWindowScreen(
                 state = state,
                 onToggleAwake = {
+                    if (!state.isAwake) askForNotificationsIfNeeded()
                     if (app != null) {
                         uiScope.launch {
                             app.controller.toggle()
@@ -113,6 +116,17 @@ class SettingsDialogActivity : AppCompatActivity() {
             val appearance = if (!isNight) clearCaption or lightCaption else clearCaption
             controller.setSystemBarsAppearance(appearance, clearCaption or lightCaption)
         }
+    }
+
+    /**
+     * The foreground service's notification (Turn off, +30 min) shows only with POST_NOTIFICATIONS, which Android 13+
+     * grants at runtime. Asked when the user turns Awake on from this window; Android stops showing the prompt after
+     * two refusals, and Awake keeps working without it.
+     */
+    private fun askForNotificationsIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
     }
 
     private fun selectDuration(minutes: Int) {
@@ -181,5 +195,9 @@ class SettingsDialogActivity : AppCompatActivity() {
     override fun onDestroy() {
         uiScope.cancel()
         super.onDestroy()
+    }
+
+    private companion object {
+        const val REQUEST_NOTIFICATIONS = 1
     }
 }
