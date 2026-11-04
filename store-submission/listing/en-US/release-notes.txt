@@ -1,0 +1,1 @@
+Awake from Meridian11 LLC. Keep your laptop awake from the taskbar icon, a Quick Settings tile, a desktop widget or the app's window: until you turn it off, or for 30 minutes, 1 or 2 hours. It turns itself off when the battery runs low or the lid closes, and it has no internet permission.

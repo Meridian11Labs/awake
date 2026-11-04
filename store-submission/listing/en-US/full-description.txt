@@ -1,0 +1,21 @@
+Awake keeps your laptop from going to sleep while you want it awake: during a long download, a presentation, a video call or a build, or while you read. Click the coffee cup in the taskbar and the screen stays on. Click it again and your laptop sleeps as usual.
+
+One switch, four places
+Turn Awake on and off from its icon in the taskbar, from its window, from a Quick Settings tile, or from a widget on your desktop. All four always show the same state, and the taskbar icon itself changes: a full cup while Awake is on, a half-empty one when it is off.
+
+For as long as you choose
+Keep awake until you turn it off, or for 30 minutes, 1 hour or 2 hours. While Awake is on, a notification shows it, with buttons to turn it off or add 30 minutes.
+
+Guards you can switch on and off
+• Battery guard: turns Awake off when the battery drops below 20% while unplugged (on by default).
+• Lid guard: turns Awake off when you close the lid, so your laptop sleeps in your bag (on by default).
+• Charger: turns Awake on when you plug in the charger (off by default).
+• Screen dimming: lets the screen dim while the laptop stays awake.
+
+Quick to reach
+Right-click the taskbar icon for its shortcuts. Or set the icon to switch Awake on and off at once, without opening a window. The widget starts as a single square and shows the timer and settings when you make it bigger.
+
+Private
+Awake has no internet permission, no ads and no accounts, and collects nothing. Its settings stay on your device.
+
+Awake is made by Meridian11 LLC.
