@@ -1,5 +1,5 @@
 # Pushing a tag like v2.1.0 builds, signs and publishes that release: the APK as a GitHub release, the
-# bundle as a draft on Google Play's closed-testing track (see store-submission/README.md).
+# bundle as a draft on Google Play's closed-testing track.
 # "Run workflow" on the Actions tab is a dry run: the same signed build and checks, nothing published.
 # A release for GitHub alone: the repository variable PLAY_UPLOAD set to "off" skips the Play job.
 #
@@ -22,7 +22,6 @@ concurrency:
 
 env:
   CERT: 68a60f42a4629dcb9fbb8d97b0331c227fb6111fff0b93d4bfdcfb660cd9a0c8 # the Awake release key (Meridian11 LLC)
-  PLAY_NOTES: store-submission/listing/en-US/release-notes.txt
 
 jobs:
   build:
@@ -47,7 +46,6 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           test -f "docs/release-notes/$VERSION.md" || { echo "::error::docs/release-notes/$VERSION.md is missing"; exit 1; }
           grep -q "versionName = \"$VERSION\"" app/build.gradle.kts || { echo "::error::versionName in app/build.gradle.kts isn't $VERSION"; exit 1; }
-          test "$(wc -m < "$PLAY_NOTES")" -le 500 || { echo "::error::$PLAY_NOTES is over Play's 500 characters"; exit 1; }
 
       - name: SDK packages
         run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-36" "build-tools;36.0.0" > /dev/null
@@ -133,7 +131,7 @@ jobs:
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
           if [ "$GITHUB_REF_TYPE" = tag ]; then
-            node tools/play-upload.mjs com.meridian11.books.awake bundle/app-release.aab "$PLAY_NOTES" --name "${GITHUB_REF_NAME#v}"
+            node tools/play-upload.mjs com.meridian11.books.awake bundle/app-release.aab --name "${GITHUB_REF_NAME#v}"
           else
             node tools/play-upload.mjs com.meridian11.books.awake --check
           fi

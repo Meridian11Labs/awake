@@ -31,7 +31,7 @@ Privacy policy: https://meridian11.com/privacy/awake. Terms: [TERMS_OF_SERVICE.m
 ```
 
 Releases come from a `v*` tag (`.github/workflows/release.yml`): signed in GitHub Actions, published as a GitHub
-release, the bundle kept for Google Play. The store kit and the Play Console answers are in
-[store-submission/](store-submission/README.md).
+release, the bundle kept for Google Play. The store listing, its pictures and the Play Console answers are kept
+privately, outside this repo.
 
 Copyright © 2026 Meridian11 LLC (meridian11labs@gmail.com). All rights reserved.
