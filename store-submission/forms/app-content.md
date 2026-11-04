@@ -30,5 +30,6 @@ Policy › App content › Foreground service permissions (appears after the fir
   other apps, which an activity can't.
 - **User impact if deferred or interrupted:** the device goes to sleep in the middle of what the user wanted kept
   running (a download, a presentation, a build), the thing the user explicitly asked Awake to prevent.
-- **Video:** an unlisted YouTube video recorded on a Googlebook: turning Awake on from the taskbar icon, the
-  notification, the Quick Settings tile, and turning it off. Link in the Play Console.
+- **Video:** an unlisted YouTube video recorded on a Googlebook: opening Awake from the taskbar, turning it on in its
+  window, the service's notification, the Quick Settings tile, and turning it off from the notification. Link in the
+  Play Console.

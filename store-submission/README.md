@@ -20,7 +20,8 @@ LLC on the developer account Meridian11.
 
 The listing text avoids what Play's metadata policy rules out: rankings or superlatives, promotional words,
 testimonials, emoji, calls to action and other companies' app names. No store image shows a desktop wallpaper or
-another company's artwork: the screenshots are cropped to Awake's own window.
+another company's artwork: the screenshots show Awake's own window, notification and Quick Settings tile, cut out of
+captures on a Googlebook (`play/graphics.js` in kuscher-ops adds the captions).
 
 ## Releasing
 
