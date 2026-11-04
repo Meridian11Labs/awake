@@ -106,4 +106,18 @@ class AwakePreferencesRepositoryTest {
         assertFalse(state.lidCloseAutoShutoffEnabled)
         assertTrue(state.allowScreenDimming)
     }
+
+    @Test
+    fun `revoking accessibility disclosure consent atomically disables tap simulation`() = runTest {
+        repository.setAccessibilityDisclosureAccepted(true)
+        repository.setTapSimulationConfig(enabled = true, intervalSeconds = 30)
+        var state = repository.stateFlow.first()
+        assertTrue(state.accessibilityDisclosureAccepted)
+        assertTrue(state.tapSimulationEnabled)
+
+        repository.setAccessibilityDisclosureAccepted(false)
+        state = repository.stateFlow.first()
+        assertFalse("Consent must be false after revocation", state.accessibilityDisclosureAccepted)
+        assertFalse("Tap simulation must be atomically disabled when consent is revoked", state.tapSimulationEnabled)
+    }
 }

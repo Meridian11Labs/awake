@@ -7,9 +7,10 @@
     <string name="shortcut_settings_short">Awake Settings…</string>
     <string name="shortcut_settings_long">Keep Awake Settings…</string>
     <string name="accessibility_service_label">Awake Display &amp; Tap Keep-Alive</string>
-    <string name="accessibility_service_description">Keeps your Googlebook awake when toggled ON via an invisible keep-screen-on surface or optional periodic idle micro-tap. Does not read screen content or collect any user data.</string>
-    <string name="disclosure_title">Accessibility Service Disclosure</string>
-    <string name="disclosure_message">Awake uses the Android Accessibility Service solely to keep your display active (via a keep-screen-on overlay or optional periodic idle micro-tap every X seconds) when WakeLocks cannot be used.\n\nAwake does NOT read screen content, observe keystrokes, collect personal data, or transmit any information.</string>
-    <string name="disclosure_accept">Agree &amp; Enable</string>
-    <string name="disclosure_decline">No Thanks</string>
+    <string name="accessibility_service_summary">Keeps Googlebook display awake via 1×1 overlay and optional corner micro-taps (no screen reading or data collection).</string>
+    <string name="accessibility_service_description">Awake (by Meridian11 LLC) uses the Android AccessibilityService API solely when you enable Keep-Awake or Simulate Tap/Click Fallback to: (1) maintain a 1×1 transparent keep-screen-on window overlay, and (2) optionally perform a harmless micro-tap at screen coordinate (1, 1) at your chosen interval when standard WakeLocks are restricted by desktop power policies. Awake does NOT read screen content, capture keystrokes, inspect window hierarchies, or collect, store, or transmit any personal or sensitive user data.</string>
+    <string name="disclosure_title">Prominent Disclosure: AccessibilityService API</string>
+    <string name="disclosure_message">To keep your Googlebook or Android desktop awake when enterprise or system policies ignore standard WakeLocks, Awake requests permission to use the Android AccessibilityService API.\n\n• How Awake uses AccessibilityService:\n1. Displays an invisible 1×1 pixel window overlay (TYPE_ACCESSIBILITY_OVERLAY) with FLAG_KEEP_SCREEN_ON while Awake is active.\n2. When \'Simulate Tap / Click Fallback\' is turned on, dispatches a single 1-millisecond micro-tap gesture (dispatchGesture) at screen coordinate (1, 1) every 15–120 seconds.\n\n• Privacy &amp; Data Guarantee:\nAwake sets canRetrieveWindowContent=\"false\" and listens to zero accessibility events. Awake does NOT read your screen, monitor apps, log keystrokes, or collect, store, or share any personal or sensitive user data. No internet permission is requested.\n\nYou can decline now and still use Awake\'s standard WakeLock mode, or revoke this consent at any time in Awake → About &amp; Legal.</string>
+    <string name="disclosure_accept">Agree &amp; Continue</string>
+    <string name="disclosure_decline">Decline</string>
 </resources>

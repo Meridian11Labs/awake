@@ -21,7 +21,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Optional, Google Play-compliant AccessibilityService (`canRetrieveWindowContent="false"`,
- * `accessibilityEventTypes=""`) that provides two hardware-backed Keep-Awake mechanisms:
+ * `accessibilityEventTypes=""`, `isAccessibilityTool="false"`) that provides two hardware-backed
+ * Keep-Awake mechanisms ONLY after the user accepts the in-app Prominent Disclosure:
  * 1. Attaches a `1x1` transparent `TYPE_ACCESSIBILITY_OVERLAY` view with `FLAG_KEEP_SCREEN_ON`.
  * 2. When `tapSimulationEnabled` is active, dispatches a 1ms micro-tap every X seconds via `dispatchGesture`.
  */
@@ -30,6 +31,9 @@ class KeepAwakeAccessibilityService : AccessibilityService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var overlayView: View? = null
     private var tapEngine: TapSimulatorEngine? = null
+
+    val isOverlayAttached: Boolean
+        get() = overlayView != null
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -63,6 +67,15 @@ class KeepAwakeAccessibilityService : AccessibilityService() {
     }
 
     fun applyState(state: AwakeState) {
+        if (!state.accessibilityDisclosureAccepted) {
+            // Strict Google Play Accessibility API Policy compliance:
+            // Never attach TYPE_ACCESSIBILITY_OVERLAY or dispatch gestures unless
+            // the user has explicitly accepted the in-app Prominent Disclosure.
+            detachKeepScreenOnOverlay()
+            tapEngine?.stop()
+            return
+        }
+
         if (state.isAwake) {
             if (!state.allowScreenDimming) {
                 attachKeepScreenOnOverlay()
@@ -83,9 +96,10 @@ class KeepAwakeAccessibilityService : AccessibilityService() {
 
     private fun attachKeepScreenOnOverlay() {
         if (overlayView != null) return
+        val view = View(this)
+        overlayView = view
         val wm = getSystemService(WindowManager::class.java) ?: return
         try {
-            val view = View(this)
             val params = WindowManager.LayoutParams(
                 1,
                 1,
@@ -99,9 +113,7 @@ class KeepAwakeAccessibilityService : AccessibilityService() {
                 gravity = Gravity.BOTTOM or Gravity.END
             }
             wm.addView(view, params)
-            overlayView = view
         } catch (_: Throwable) {
-            overlayView = null
         }
     }
 
@@ -126,7 +138,7 @@ class KeepAwakeAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // Never reads accessibility events (canRetrieveWindowContent="false")
+        // Never reads accessibility events (canRetrieveWindowContent="false", accessibilityEventTypes="")
     }
 
     override fun onInterrupt() {

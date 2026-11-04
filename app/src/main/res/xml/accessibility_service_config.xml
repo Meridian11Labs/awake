@@ -2,8 +2,11 @@
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes=""
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags=""
+    android:accessibilityFlags="flagDefault"
     android:canPerformGestures="true"
     android:canRetrieveWindowContent="false"
     android:description="@string/accessibility_service_description"
-    android:settingsActivity="com.meridian11.books.awake.ui.SettingsDialogActivity" />
+    android:isAccessibilityTool="false"
+    android:notificationTimeout="0"
+    android:settingsActivity="com.meridian11.books.awake.ui.SettingsDialogActivity"
+    android:summary="@string/accessibility_service_summary" />
