@@ -7,8 +7,7 @@ import com.meridian11.books.awake.AwakeApp
 import kotlinx.coroutines.launch
 
 /**
- * Reconciles Taskbar Coffee Cup icon and Keep-Awake state across device reboots,
- * app updates, and AC charger connect/disconnect events.
+ * Reconciles Taskbar Coffee Cup icon and Keep-Awake state across device reboots and app updates.
  */
 class SystemEventReceiver : BroadcastReceiver() {
 
@@ -24,15 +23,6 @@ class SystemEventReceiver : BroadcastReceiver() {
                     Intent.ACTION_MY_PACKAGE_REPLACED -> {
                         // Reset to Empty Coffee Cup on fresh boot so taskbar icon matches stopped service
                         app.controller.disableKeepAwake()
-                    }
-                    Intent.ACTION_POWER_CONNECTED -> {
-                        app.controller.onChargerStateChanged(isPluggedIn = true)
-                    }
-                    Intent.ACTION_POWER_DISCONNECTED -> {
-                        app.controller.onChargerStateChanged(isPluggedIn = false)
-                    }
-                    Intent.ACTION_BATTERY_LOW -> {
-                        app.controller.onBatteryStateChanged(levelPercent = 15, isCharging = false)
                     }
                 }
             } finally {

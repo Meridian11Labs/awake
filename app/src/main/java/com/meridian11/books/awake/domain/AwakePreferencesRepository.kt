@@ -25,14 +25,12 @@ interface AwakePreferencesRepository {
     suspend fun setAwakeState(isAwake: Boolean, expiresAtEpochMillis: Long)
     suspend fun setDurationMinutes(durationMinutes: Int)
     suspend fun cycleDurationPreset(): Int
-    suspend fun setTapSimulationConfig(enabled: Boolean, intervalSeconds: Int)
     suspend fun updateGuardrails(
         lowBatteryCutoffEnabled: Boolean,
         autoAwakeOnChargerEnabled: Boolean,
         lidCloseAutoShutoffEnabled: Boolean,
         allowScreenDimming: Boolean
     )
-    suspend fun setAccessibilityDisclosureAccepted(accepted: Boolean)
     suspend fun setDirectToggleOnTap(enabled: Boolean)
 }
 
@@ -71,19 +69,6 @@ class InMemoryAwakePreferencesRepository(
         return nextPreset
     }
 
-    override suspend fun setTapSimulationConfig(enabled: Boolean, intervalSeconds: Int) {
-        val clamped = intervalSeconds.coerceIn(
-            AwakeState.MIN_TAP_INTERVAL_SECONDS,
-            AwakeState.MAX_TAP_INTERVAL_SECONDS
-        )
-        _stateFlow.update {
-            it.copy(
-                tapSimulationEnabled = enabled,
-                tapIntervalSeconds = clamped
-            )
-        }
-    }
-
     override suspend fun updateGuardrails(
         lowBatteryCutoffEnabled: Boolean,
         autoAwakeOnChargerEnabled: Boolean,
@@ -100,15 +85,6 @@ class InMemoryAwakePreferencesRepository(
         }
     }
 
-    override suspend fun setAccessibilityDisclosureAccepted(accepted: Boolean) {
-        _stateFlow.update { current ->
-            current.copy(
-                accessibilityDisclosureAccepted = accepted,
-                tapSimulationEnabled = if (!accepted) false else current.tapSimulationEnabled
-            )
-        }
-    }
-
     override suspend fun setDirectToggleOnTap(enabled: Boolean) {
         _stateFlow.update { it.copy(directToggleOnTap = enabled) }
     }
@@ -120,18 +96,17 @@ class DataStoreAwakePreferencesRepository(
 
     constructor(context: Context) : this(context.applicationContext.awakeDataStore)
 
+    // Keys written by earlier builds and no longer listed here may still be on a device;
+    // DataStore keeps them and they are simply never read.
     private object Keys {
         val IS_AWAKE = booleanPreferencesKey("is_awake")
         val DURATION_MINUTES = intPreferencesKey("duration_minutes")
         val EXPIRES_AT_MILLIS = longPreferencesKey("expires_at_millis")
-        val TAP_SIM_ENABLED = booleanPreferencesKey("tap_sim_enabled")
-        val TAP_INTERVAL_SECONDS = intPreferencesKey("tap_interval_seconds")
         val LOW_BATTERY_CUTOFF = booleanPreferencesKey("low_battery_cutoff")
         val LOW_BATTERY_THRESHOLD = intPreferencesKey("low_battery_threshold")
         val AUTO_AWAKE_CHARGER = booleanPreferencesKey("auto_awake_charger")
         val LID_CLOSE_SHUTOFF = booleanPreferencesKey("lid_close_shutoff")
         val ALLOW_SCREEN_DIMMING = booleanPreferencesKey("allow_screen_dimming")
-        val ACCESSIBILITY_DISCLOSURE = booleanPreferencesKey("accessibility_disclosure_accepted")
         val DIRECT_TOGGLE_ON_TAP = booleanPreferencesKey("direct_toggle_on_tap")
     }
 
@@ -140,14 +115,11 @@ class DataStoreAwakePreferencesRepository(
             isAwake = prefs[Keys.IS_AWAKE] ?: false,
             durationMinutes = prefs[Keys.DURATION_MINUTES] ?: 0,
             sessionExpiresAtEpochMillis = prefs[Keys.EXPIRES_AT_MILLIS] ?: 0L,
-            tapSimulationEnabled = prefs[Keys.TAP_SIM_ENABLED] ?: false,
-            tapIntervalSeconds = prefs[Keys.TAP_INTERVAL_SECONDS] ?: 60,
             lowBatteryCutoffEnabled = prefs[Keys.LOW_BATTERY_CUTOFF] ?: true,
             lowBatteryThresholdPercent = prefs[Keys.LOW_BATTERY_THRESHOLD] ?: 20,
             autoAwakeOnChargerEnabled = prefs[Keys.AUTO_AWAKE_CHARGER] ?: false,
             lidCloseAutoShutoffEnabled = prefs[Keys.LID_CLOSE_SHUTOFF] ?: true,
             allowScreenDimming = prefs[Keys.ALLOW_SCREEN_DIMMING] ?: false,
-            accessibilityDisclosureAccepted = prefs[Keys.ACCESSIBILITY_DISCLOSURE] ?: false,
             directToggleOnTap = prefs[Keys.DIRECT_TOGGLE_ON_TAP] ?: false
         )
     }
@@ -180,17 +152,6 @@ class DataStoreAwakePreferencesRepository(
         return nextPreset
     }
 
-    override suspend fun setTapSimulationConfig(enabled: Boolean, intervalSeconds: Int) {
-        val clamped = intervalSeconds.coerceIn(
-            AwakeState.MIN_TAP_INTERVAL_SECONDS,
-            AwakeState.MAX_TAP_INTERVAL_SECONDS
-        )
-        dataStore.edit { prefs ->
-            prefs[Keys.TAP_SIM_ENABLED] = enabled
-            prefs[Keys.TAP_INTERVAL_SECONDS] = clamped
-        }
-    }
-
     override suspend fun updateGuardrails(
         lowBatteryCutoffEnabled: Boolean,
         autoAwakeOnChargerEnabled: Boolean,
@@ -202,15 +163,6 @@ class DataStoreAwakePreferencesRepository(
             prefs[Keys.AUTO_AWAKE_CHARGER] = autoAwakeOnChargerEnabled
             prefs[Keys.LID_CLOSE_SHUTOFF] = lidCloseAutoShutoffEnabled
             prefs[Keys.ALLOW_SCREEN_DIMMING] = allowScreenDimming
-        }
-    }
-
-    override suspend fun setAccessibilityDisclosureAccepted(accepted: Boolean) {
-        dataStore.edit { prefs ->
-            prefs[Keys.ACCESSIBILITY_DISCLOSURE] = accepted
-            if (!accepted) {
-                prefs[Keys.TAP_SIM_ENABLED] = false
-            }
         }
     }
 

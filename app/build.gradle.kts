@@ -1,15 +1,6 @@
-import java.util.Properties
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
-}
-
-val keystorePropsFile = rootProject.file("keystore.properties")
-val keystoreProps = Properties().apply {
-    if (keystorePropsFile.exists()) {
-        keystorePropsFile.inputStream().use { load(it) }
-    }
 }
 
 android {
@@ -20,29 +11,25 @@ android {
         applicationId = "com.meridian11.books.awake"
         minSdk = 31
         targetSdk = 36
-        versionCode = 2
-        versionName = "2.0.0"
+        versionCode = 3
+        versionName = "2.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Release signing from ~/.config/awake (never committed): the release workflow writes the key there from the
+    // repo's secrets. Absent -> an unsigned release build.
+    val keyDir = File(System.getProperty("user.home"), ".config/awake")
+    val keyFile = File(keyDir, "keystore.jks")
+    val keyPassFile = File(keyDir, "keystore.pass")
     signingConfigs {
-        create("release") {
-            val storePath = System.getenv("MERIDIAN11_KEYSTORE_FILE")
-                ?: keystoreProps.getProperty("storeFile")
-                ?: "keystore/meridian11-release.jks"
-            val candidateFile = file(storePath)
-            if (candidateFile.exists()) {
-                storeFile = candidateFile
-                storePassword = System.getenv("MERIDIAN11_KEYSTORE_PASSWORD")
-                    ?: keystoreProps.getProperty("storePassword")
-                    ?: "meridian11awake"
-                keyAlias = System.getenv("MERIDIAN11_KEY_ALIAS")
-                    ?: keystoreProps.getProperty("keyAlias")
-                    ?: "meridian11"
-                keyPassword = System.getenv("MERIDIAN11_KEY_PASSWORD")
-                    ?: keystoreProps.getProperty("keyPassword")
-                    ?: "meridian11awake"
+        if (keyFile.exists() && keyPassFile.exists()) {
+            create("release") {
+                storeFile = keyFile
+                val pw = keyPassFile.readText().trim()
+                storePassword = pw
+                keyAlias = "awake"
+                keyPassword = pw
             }
         }
     }
@@ -51,12 +38,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            val releaseSigning = signingConfigs.findByName("release")
-            if (releaseSigning?.storeFile?.exists() == true) {
-                signingConfig = releaseSigning
-            } else {
-                signingConfig = signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -97,7 +79,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
-    testImplementation("junit:junit:13.2".replace("13.2", "4.13.2"))
+    testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
     testImplementation("androidx.test:core-ktx:1.7.0")
     testImplementation("androidx.test.ext:junit:1.3.0")

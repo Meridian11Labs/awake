@@ -7,8 +7,7 @@ import com.meridian11.books.awake.domain.AwakeState
 import com.meridian11.books.awake.domain.KeepAwakeEnginePort
 
 /**
- * Platform adapter implementing [KeepAwakeEnginePort] by starting/stopping [KeepAwakeService]
- * and syncing [KeepAwakeAccessibilityService].
+ * Platform adapter implementing [KeepAwakeEnginePort] by starting/stopping [KeepAwakeService].
  */
 class AndroidKeepAwakeEngineAdapter(
     private val context: Context
@@ -19,14 +18,11 @@ class AndroidKeepAwakeEngineAdapter(
             action = KeepAwakeService.ACTION_START_OR_UPDATE
             putExtra(KeepAwakeService.EXTRA_DURATION_MINUTES, state.durationMinutes)
             putExtra(KeepAwakeService.EXTRA_ALLOW_DIMMING, state.allowScreenDimming)
-            putExtra(KeepAwakeService.EXTRA_TAP_SIM_ENABLED, state.tapSimulationEnabled)
-            putExtra(KeepAwakeService.EXTRA_TAP_INTERVAL_SEC, state.tapIntervalSeconds)
         }
         try {
             ContextCompat.startForegroundService(context, intent)
         } catch (_: Throwable) {
         }
-        KeepAwakeAccessibilityService.instance?.applyState(state)
     }
 
     override fun stopKeepAwake() {
@@ -35,6 +31,5 @@ class AndroidKeepAwakeEngineAdapter(
             context.stopService(intent)
         } catch (_: Throwable) {
         }
-        KeepAwakeAccessibilityService.instance?.applyState(AwakeState(isAwake = false))
     }
 }

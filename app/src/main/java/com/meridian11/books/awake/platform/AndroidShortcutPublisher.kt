@@ -11,7 +11,7 @@ import com.meridian11.books.awake.domain.AwakeState
 import com.meridian11.books.awake.domain.ShortcutPublisherPort
 
 /**
- * Publishes and dynamically updates the 4 right-click Taskbar context menu shortcuts
+ * Publishes and dynamically updates the 3 right-click Taskbar context menu shortcuts
  * using Material Design themed vector icons (zero color emojis).
  * Re-binds `ShortcutInfo.Builder.setActivity(...)` to the currently enabled `<activity-alias>`
  * whenever the Coffee Cup icon switches between Empty and Full.
@@ -44,10 +44,6 @@ class AndroidShortcutPublisher(
         val timerLabelShort = "Timer: ${formatDurationShort(state.durationMinutes)}"
         val timerLabelLong = "Cycle Timer (${formatDurationLong(state.durationMinutes)})"
 
-        val pulseStateText = if (state.tapSimulationEnabled) "ON" else "OFF"
-        val pulseLabelShort = "Tap Sim: $pulseStateText (${state.tapIntervalSeconds}s)"
-        val pulseLabelLong = "Tap Simulator: $pulseStateText (Every ${state.tapIntervalSeconds}s)"
-
         val shortcuts = listOf(
             ShortcutInfo.Builder(context, ID_STATUS_TOGGLE)
                 .setActivity(activeAlias)
@@ -67,18 +63,9 @@ class AndroidShortcutPublisher(
                 .setIntent(createShortcutActionIntent(ACTION_SHORTCUT_CYCLE_TIMER))
                 .build(),
 
-            ShortcutInfo.Builder(context, ID_TOGGLE_PULSE)
-                .setActivity(activeAlias)
-                .setRank(2)
-                .setShortLabel(pulseLabelShort)
-                .setLongLabel(pulseLabelLong)
-                .setIcon(Icon.createWithResource(context, R.drawable.ic_shortcut_pulse))
-                .setIntent(createShortcutActionIntent(ACTION_SHORTCUT_TOGGLE_TAP_SIM))
-                .build(),
-
             ShortcutInfo.Builder(context, ID_OPEN_SETTINGS)
                 .setActivity(activeAlias)
-                .setRank(3)
+                .setRank(2)
                 .setShortLabel("Awake Settings…")
                 .setLongLabel("Keep Awake Settings…")
                 .setIcon(Icon.createWithResource(context, R.drawable.ic_shortcut_settings))
@@ -107,12 +94,10 @@ class AndroidShortcutPublisher(
     companion object {
         const val ID_STATUS_TOGGLE = "shortcut_status_toggle"
         const val ID_PRESET_TIMER = "shortcut_preset_timer"
-        const val ID_TOGGLE_PULSE = "shortcut_toggle_pulse"
         const val ID_OPEN_SETTINGS = "shortcut_open_settings"
 
         const val ACTION_SHORTCUT_TOGGLE_AWAKE = "com.meridian11.books.awake.action.TOGGLE_AWAKE"
         const val ACTION_SHORTCUT_CYCLE_TIMER = "com.meridian11.books.awake.action.CYCLE_TIMER"
-        const val ACTION_SHORTCUT_TOGGLE_TAP_SIM = "com.meridian11.books.awake.action.TOGGLE_TAP_SIM"
         const val ACTION_OPEN_SETTINGS = "com.meridian11.books.awake.action.OPEN_SETTINGS"
 
         const val SHORTCUT_ACTION_ACTIVITY_CLASS =
