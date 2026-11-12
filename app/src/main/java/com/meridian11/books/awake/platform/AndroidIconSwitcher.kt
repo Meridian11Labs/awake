@@ -10,10 +10,12 @@ import com.meridian11.books.awake.domain.IconSwitcherPort
  * Switches the Googlebook Taskbar launcher icon between the Empty Coffee Cup
  * (`EmptyCupAlias`) and Full Coffee Cup (`FullCupAlias`).
  *
- * Enforces two critical Launcher3 / Desktop Taskbar invariants:
- * 1. Always enables the incoming `<activity-alias>` BEFORE disabling the outgoing one
+ * Enforces three critical Launcher3 / Desktop Taskbar invariants:
+ * 1. Idempotently skips PackageManager writes when the requested alias state is already active,
+ *    preventing unnecessary `ACTION_PACKAGE_CHANGED` Taskbar icon flickers.
+ * 2. Always enables the incoming `<activity-alias>` BEFORE disabling the outgoing one
  *    (and uses atomic `setComponentEnabledSettings` on API 34+).
- * 2. Self-heals if both aliases are ever disabled or both enabled.
+ * 3. Self-heals if both aliases are ever disabled or both enabled.
  */
 class AndroidIconSwitcher(
     private val context: Context,
@@ -28,6 +30,15 @@ class AndroidIconSwitcher(
 
         val targetToEnable = if (isFullCup) fullAlias else emptyAlias
         val targetToDisable = if (isFullCup) emptyAlias else fullAlias
+
+        // Idempotent fast-path: skip PackageManager IPC if aliases are already in exact target state
+        val isTargetEnabled = packageManager.getComponentEnabledSetting(targetToEnable) ==
+            PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+        val isOtherDisabled = packageManager.getComponentEnabledSetting(targetToDisable) ==
+            PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+        if (isTargetEnabled && isOtherDisabled) {
+            return
+        }
 
         onComponentStateChange?.invoke(
             targetToEnable,
@@ -64,16 +75,18 @@ class AndroidIconSwitcher(
             packageManager.getComponentEnabledSetting(targetToDisable) !=
             PackageManager.COMPONENT_ENABLED_STATE_DISABLED
         ) {
-            packageManager.setComponentEnabledSetting(
-                targetToEnable,
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                PackageManager.DONT_KILL_APP
-            )
-            packageManager.setComponentEnabledSetting(
-                targetToDisable,
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP
-            )
+            runCatching {
+                packageManager.setComponentEnabledSetting(
+                    targetToEnable,
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+                packageManager.setComponentEnabledSetting(
+                    targetToDisable,
+                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            }
         }
     }
 

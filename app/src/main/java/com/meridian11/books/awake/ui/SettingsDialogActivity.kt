@@ -1,77 +1,104 @@
 package com.meridian11.books.awake.ui
 
 import android.Manifest
+import android.app.ActivityManager
 import android.app.StatusBarManager
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.BitmapFactory
 import android.graphics.drawable.Icon
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.WindowInsetsController
 import android.widget.Toast
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.core.view.WindowCompat
+import androidx.compose.runtime.remember
 import com.meridian11.books.awake.AwakeApp
 import com.meridian11.books.awake.R
 import com.meridian11.books.awake.domain.AwakeState
+import com.meridian11.books.awake.platform.AndroidShortcutPublisher
 import com.meridian11.books.awake.service.KeepAwakeTileService
 import com.meridian11.books.awake.widget.AwakeSquircleWidgetProvider
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * Full Desktop/Googlebook Control & Settings Window built in Jetpack Compose.
+ * Full Googlebook Control & Settings Window built in Jetpack Compose.
  *
  * Uses an opaque Material 3 Expressive surface with a seamless transparent window caption bar
- * (`APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND`) and zero background blur.
+ * (`APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND` on Android 15+) and zero background blur.
  */
 class SettingsDialogActivity : AppCompatActivity() {
 
-    private val uiScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-
+    @VisibleForTesting
     val isGlassBlurConfigured: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        enableSeamlessDesktopWindowHeader()
+
+        if (savedInstanceState == null && intent?.action == AndroidShortcutPublisher.ACTION_OPEN_SETTINGS) {
+            AndroidShortcutPublisher.reportShortcutUsed(this, AndroidShortcutPublisher.ID_OPEN_SETTINGS)
+        }
 
         val app = applicationContext as? AwakeApp
         setContent {
             val state by if (app != null) {
-                app.repository.stateFlow.collectAsState(initial = AwakeState())
+                app.uiStateFlow.collectAsState()
             } else {
-                androidx.compose.runtime.remember { mutableStateOf(AwakeState()) }
+                remember { mutableStateOf(AwakeState()) }
+            }
+
+            LaunchedEffect(state.isAwake) {
+                updateWindowTaskDescription(isAwake = state.isAwake)
             }
 
             SettingsWindowScreen(
                 state = state,
                 onToggleAwake = {
-                    if (!state.isAwake) askForNotificationsIfNeeded()
+                    if (!state.isAwake &&
+                        state.lowBatteryCutoffEnabled &&
+                        isCurrentlyBlockedByLowBattery(state.lowBatteryThresholdPercent)
+                    ) {
+                        Toast.makeText(
+                            this,
+                            getString(R.string.toast_blocked_by_low_battery, state.lowBatteryThresholdPercent),
+                            Toast.LENGTH_LONG
+                        ).show()
+                        return@SettingsWindowScreen
+                    }
+                    if (!state.isAwake) {
+                        askForNotificationsIfNeeded()
+                    }
                     if (app != null) {
-                        uiScope.launch {
+                        app.appScope.launch {
                             app.controller.toggle()
                         }
                     }
                 },
                 onSelectDuration = { minutes ->
-                    selectDuration(minutes)
+                    if (app != null) {
+                        app.appScope.launch {
+                            app.controller.selectDurationPreset(minutes)
+                        }
+                    }
                 },
                 onToggleDirectTap = { desired ->
                     if (app != null) {
-                        uiScope.launch {
-                            app.repository.setDirectToggleOnTap(desired)
-                            app.controller.syncCurrentState()
+                        app.appScope.launch {
+                            app.controller.setDirectToggleOnTap(desired)
                         }
                     }
                 },
@@ -81,16 +108,15 @@ class SettingsDialogActivity : AppCompatActivity() {
                 onPinWidget = {
                     requestPinSquircleWidget()
                 },
-                onUpdateGuardrails = { lidClose, lowBattery, charger, dimming ->
+                onUpdateGuardrails = { lidClose, lowBattery, dimming ->
                     if (app != null) {
-                        uiScope.launch {
-                            app.repository.updateGuardrails(
+                        app.appScope.launch {
+                            app.controller.updateGuardrails(
                                 lowBatteryCutoffEnabled = lowBattery,
-                                autoAwakeOnChargerEnabled = charger,
+                                autoAwakeOnChargerEnabled = state.autoAwakeOnChargerEnabled,
                                 lidCloseAutoShutoffEnabled = lidClose,
                                 allowScreenDimming = dimming
                             )
-                            app.controller.syncCurrentState()
                         }
                     }
                 },
@@ -99,6 +125,16 @@ class SettingsDialogActivity : AppCompatActivity() {
                 }
             )
         }
+
+        enableSeamlessDesktopWindowHeader()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.action == AndroidShortcutPublisher.ACTION_OPEN_SETTINGS) {
+            AndroidShortcutPublisher.reportShortcutUsed(this, AndroidShortcutPublisher.ID_OPEN_SETTINGS)
+        }
     }
 
     /**
@@ -106,16 +142,50 @@ class SettingsDialogActivity : AppCompatActivity() {
      * the window header and app ground (`@color/window_bg`) form a single seamless surface.
      */
     private fun enableSeamlessDesktopWindowHeader() {
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-        val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-        val controller = window.insetsController ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            val isNight = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
+                Configuration.UI_MODE_NIGHT_YES
+            val controller = window.decorView.windowInsetsController ?: window.insetsController ?: return
             val clearCaption = WindowInsetsController.APPEARANCE_TRANSPARENT_CAPTION_BAR_BACKGROUND
             val lightCaption = WindowInsetsController.APPEARANCE_LIGHT_CAPTION_BARS
             val appearance = if (!isNight) clearCaption or lightCaption else clearCaption
             controller.setSystemBarsAppearance(appearance, clearCaption or lightCaption)
         }
+    }
+
+    private fun updateWindowTaskDescription(isAwake: Boolean) {
+        runCatching {
+            val iconRes = if (isAwake) R.mipmap.ic_launcher_full else R.mipmap.ic_launcher_empty
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                val description = ActivityManager.TaskDescription.Builder()
+                    .setLabel(getString(R.string.app_name))
+                    .setIcon(iconRes)
+                    .build()
+                setTaskDescription(description)
+            } else {
+                @Suppress("DEPRECATION")
+                val bitmap = BitmapFactory.decodeResource(resources, iconRes)
+                @Suppress("DEPRECATION")
+                setTaskDescription(ActivityManager.TaskDescription(getString(R.string.app_name), bitmap))
+            }
+        }
+    }
+
+    private fun isCurrentlyBlockedByLowBattery(thresholdPercent: Int): Boolean {
+        val sticky = runCatching {
+            registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        }.getOrNull() ?: return false
+
+        val level = sticky.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+        if (level < 0) return false
+        val scale = sticky.getIntExtra(BatteryManager.EXTRA_SCALE, 100).coerceAtLeast(1)
+        val status = sticky.getIntExtra(BatteryManager.EXTRA_STATUS, -1)
+        val plugged = sticky.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0)
+        val isCharging = plugged != 0 ||
+            status == BatteryManager.BATTERY_STATUS_CHARGING ||
+            status == BatteryManager.BATTERY_STATUS_FULL
+        val percent = (level * 100) / scale
+        return !isCharging && percent <= thresholdPercent
     }
 
     /**
@@ -129,14 +199,17 @@ class SettingsDialogActivity : AppCompatActivity() {
         requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
     }
 
-    private fun selectDuration(minutes: Int) {
-        val app = applicationContext as? AwakeApp ?: return
-        uiScope.launch {
-            app.repository.setDurationMinutes(minutes)
-            val current = app.repository.stateFlow.first()
-            if (current.isAwake) {
-                app.controller.enableWithDuration(minutes)
-            } else {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_NOTIFICATIONS &&
+            grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
+        ) {
+            val app = applicationContext as? AwakeApp ?: return
+            app.appScope.launch {
                 app.controller.syncCurrentState()
             }
         }
@@ -186,15 +259,10 @@ class SettingsDialogActivity : AppCompatActivity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_ESCAPE) {
-            finish()
+            onBackPressedDispatcher.onBackPressed()
             return true
         }
         return super.onKeyDown(keyCode, event)
-    }
-
-    override fun onDestroy() {
-        uiScope.cancel()
-        super.onDestroy()
     }
 
     private companion object {

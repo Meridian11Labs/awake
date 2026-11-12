@@ -52,7 +52,7 @@ class ShortcutControllerTest {
         assertTrue(shortcuts[0].shortLabel.toString().contains("Suspend", ignoreCase = true))
 
         assertEquals(AndroidShortcutPublisher.ID_PRESET_TIMER, shortcuts[1].id)
-        assertTrue(shortcuts[1].shortLabel.toString().contains("Indefinite", ignoreCase = true))
+        assertTrue(shortcuts[1].shortLabel.toString().contains("Infinite", ignoreCase = true))
 
         assertEquals(AndroidShortcutPublisher.ID_OPEN_SETTINGS, shortcuts[2].id)
         assertTrue(shortcuts[2].shortLabel.toString().contains("Settings", ignoreCase = true))
@@ -77,8 +77,10 @@ class ShortcutControllerTest {
         }
 
         assertTrue(shortcuts[0].shortLabel.toString().contains("Awake", ignoreCase = true))
-        assertTrue(shortcuts[1].shortLabel.toString().contains("1h", ignoreCase = true) ||
-            shortcuts[1].shortLabel.toString().contains("60m", ignoreCase = true))
+        assertTrue(
+            shortcuts[1].shortLabel.toString().contains("1h", ignoreCase = true) ||
+                shortcuts[1].shortLabel.toString().contains("60m", ignoreCase = true)
+        )
         assertEquals(AndroidShortcutPublisher.ID_OPEN_SETTINGS, shortcuts[2].id)
     }
 }

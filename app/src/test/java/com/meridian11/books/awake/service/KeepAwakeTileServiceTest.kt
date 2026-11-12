@@ -10,6 +10,7 @@ import com.meridian11.books.awake.domain.FakeShortcutPublisherPort
 import com.meridian11.books.awake.domain.InMemoryAwakePreferencesRepository
 import com.meridian11.books.awake.widget.AndroidWidgetUpdater
 import com.meridian11.books.awake.widget.AwakeSquircleWidgetProvider
+import com.meridian11.books.awake.widget.AwakeWidgetActionReceiver
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -82,7 +83,7 @@ class KeepAwakeTileServiceTest {
         }
 
     @Test
-    fun `toggling from widget or settings synchronizes Quick Settings tile, app icon, and state in lockstep`() =
+    fun `toggling from widget action receiver or settings synchronizes Quick Settings tile, app icon, and state in lockstep`() =
         runTest(UnconfinedTestDispatcher()) {
             app.configureDependencies(
                 repository = repository,
@@ -99,18 +100,23 @@ class KeepAwakeTileServiceTest {
             tileService.onStartListening()
             assertEquals(Tile.STATE_INACTIVE, tileService.qsTile.state)
 
-            // Toggle ON from Widget
-            val widgetReceiver = AwakeSquircleWidgetProvider()
-            widgetReceiver.onReceive(
+            // Toggle ON from internal WidgetActionReceiver
+            val widgetActionReceiver = AwakeWidgetActionReceiver()
+            widgetActionReceiver.onReceive(
                 app,
-                Intent(app, AwakeSquircleWidgetProvider::class.java).apply {
+                Intent(app, AwakeWidgetActionReceiver::class.java).apply {
                     action = AwakeSquircleWidgetProvider.ACTION_WIDGET_TOGGLE
+                    putExtra(AwakeSquircleWidgetProvider.EXTRA_TARGET_AWAKE, true)
                 }
             )
 
             assertTrue(repository.stateFlow.first().isAwake)
             assertEquals(true, iconPort.lastIsFullCup)
-            assertEquals("QS tile must immediately synchronize to STATE_ACTIVE when widget toggles ON", Tile.STATE_ACTIVE, tileService.qsTile.state)
+            assertEquals(
+                "QS tile must immediately synchronize to STATE_ACTIVE when widget toggles ON",
+                Tile.STATE_ACTIVE,
+                tileService.qsTile.state
+            )
 
             // Change duration from inside-app controller
             app.controller.enableWithDuration(30)
@@ -120,7 +126,11 @@ class KeepAwakeTileServiceTest {
             app.controller.toggle()
             assertFalse(repository.stateFlow.first().isAwake)
             assertEquals(false, iconPort.lastIsFullCup)
-            assertEquals("QS tile must immediately synchronize to STATE_INACTIVE when controller toggles OFF", Tile.STATE_INACTIVE, tileService.qsTile.state)
+            assertEquals(
+                "QS tile must immediately synchronize to STATE_INACTIVE when controller toggles OFF",
+                Tile.STATE_INACTIVE,
+                tileService.qsTile.state
+            )
 
             tileService.onStopListening()
         }

@@ -1,9 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Awake</string>
-    <string name="app_name_active">Awake (Active)</string>
     <string name="widget_name">Awake Coffee Cup Toggle</string>
     <string name="widget_description">1×1 squircle coffee cup widget by default — tap to toggle Keep Awake, or resize larger to reveal duration presets (Infinite, 30m, 1h, 2h) and Settings.</string>
-    <string name="shortcut_settings_short">Awake Settings…</string>
-    <string name="shortcut_settings_long">Keep Awake Settings…</string>
+
+    <!-- Dynamic Taskbar Right-Click Shortcuts -->
+    <string name="shortcut_status_awake_short">Awake (%1$s)</string>
+    <string name="shortcut_status_suspend_short">Normal Suspend</string>
+    <string name="shortcut_status_awake_long">Awake: %1$s (Click to Suspend)</string>
+    <string name="shortcut_status_suspend_long">Status: Normal Suspend (Click to Keep Awake)</string>
+    <string name="shortcut_timer_short">Timer: %1$s</string>
+    <string name="shortcut_timer_long">Cycle Timer (%1$s)</string>
+    <string name="shortcut_open_settings_short">Awake Settings…</string>
+    <string name="shortcut_open_settings_long">Keep Awake Settings…</string>
+
+    <!-- Quick Settings Tile -->
+    <string name="tile_subtitle_normal_sleep">Normal sleep</string>
+
+    <!-- Foreground Notification -->
+    <string name="notif_channel_name">Awake Active Status</string>
+    <string name="notif_channel_description">Shows when Awake is keeping your Googlebook active</string>
+    <string name="notif_title_active">Awake — Keeping Googlebook Active</string>
+    <string name="notif_duration_timed">Timed Session</string>
+    <string name="notif_mode_dimming_allowed">Dimming Allowed</string>
+    <string name="notif_mode_full_brightness">Full Brightness Lock</string>
+    <string name="notif_content_format">Duration: %1$s • %2$s</string>
+    <string name="notif_action_turn_off">Turn Off (Suspend)</string>
+    <string name="notif_action_extend_30m">+30m</string>
+    <string name="notif_action_settings">Settings</string>
+
+    <!-- Responsive AppWidget Strings -->
+    <string name="widget_title_awake_short">Awake</string>
+    <string name="widget_title_asleep_short">Asleep</string>
+    <string name="widget_subtitle_active_short">Active</string>
+    <string name="widget_subtitle_normal_short">Normal</string>
+    <string name="widget_title_keeping_awake">Keeping Awake</string>
+    <string name="widget_title_normal_sleep">Normal Sleep</string>
+    <string name="widget_subtitle_tap_default">Tap to keep Googlebook awake</string>
+    <string name="widget_subtitle_tap_preset">Tap to activate (%1$s preset)</string>
+    <string name="widget_chrono_format">%s left</string>
+    <string name="widget_pill_on">ON</string>
+    <string name="widget_pill_off">OFF</string>
+    <string name="widget_duration_infinity_symbol">∞</string>
+    <string name="widget_duration_infinite">Infinite</string>
+    <string name="widget_duration_30m">30m</string>
+    <string name="widget_duration_1h">1h</string>
+    <string name="widget_duration_2h">2h</string>
+    <string name="widget_duration_minutes_format">%1$dm</string>
+    <string name="widget_action_settings">Settings</string>
+    <string name="widget_cd_cycle_duration">Duration preset: %1$s. Tap to cycle duration.</string>
+    <string name="widget_cd_preset_selected">%1$s duration preset, selected</string>
+    <string name="widget_cd_preset_unselected">Activate Keep Awake for %1$s</string>
+
+    <!-- Guardrail Feedback -->
+    <string name="toast_blocked_by_low_battery">Battery is at or below %1$d%% while unplugged. Plug in or disable Low-Battery Cutoff to keep awake.</string>
 </resources>

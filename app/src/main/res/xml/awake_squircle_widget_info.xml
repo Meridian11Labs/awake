@@ -9,6 +9,7 @@
     android:minResizeWidth="28dp"
     android:minWidth="28dp"
     android:previewImage="@mipmap/ic_launcher_full"
+    android:previewLayout="@layout/widget_awake_squircle"
     android:resizeMode="horizontal|vertical"
     android:targetCellHeight="1"
     android:targetCellWidth="1"

@@ -10,44 +10,38 @@
 
     <!-- Hero Toggle Card: Cool Pastel Blue (Inactive) vs Warm Pastel Orange (Active) -->
     <color name="hero_card_inactive_bg">#FFDCE8FA</color>
-    <color name="hero_card_inactive_stroke">#FFB6CFF5</color>
     <color name="hero_card_active_bg">#FFFFE6D5</color>
-    <color name="hero_card_active_stroke">#FFFFC59E</color>
 
-    <!-- Typography & Dividers (Deep Navy-Slate — Zero Brown) -->
-    <color name="dialog_surface">#FFF0F4F9</color>
+    <!-- Typography (Deep Navy-Slate — Zero Brown, WCAG AA >= 4.5:1) -->
     <color name="dialog_text_primary">#FF0F172A</color>
     <color name="dialog_text_secondary">#FF475569</color>
-    <color name="dialog_divider">#FFE2E8F0</color>
 
     <!-- Segmented Pills & Action Buttons (Material 3 Expressive Blue) -->
     <color name="chip_selected_bg">#FF2563EB</color>
     <color name="chip_selected_text">#FFFFFFFF</color>
-    <color name="chip_unselected_bg">#FFE8EFF8</color>
+    <color name="chip_unselected_bg">#00000000</color>
     <color name="chip_unselected_text">#FF1E3A5F</color>
 
-    <!-- Secondary Tonal Action Button (Pastel Orange Accent) -->
-    <color name="chip_accent_bg">#FFFFE6D5</color>
+    <!-- Warm Orange Active Pill Accent inside Active Hero Card (WCAG AA 5.40:1) -->
+    <color name="chip_accent_bg">#FFFFD2B3</color>
     <color name="chip_accent_text">#FF9A3412</color>
 
-    <!-- Material 3 Switch Colors -->
+    <!-- Material 3 Switch Colors (WCAG 1.4.11 >= 3.0:1 UI Contrast) -->
     <color name="switch_track_on">#FF2563EB</color>
+    <color name="switch_track_hero_on">#FFC2410C</color>
     <color name="switch_track_off">#FFD5E0F0</color>
-    <color name="switch_track_off_stroke">#FF94A3B8</color>
+    <color name="switch_track_off_stroke">#FF64748B</color>
     <color name="switch_thumb_on">#FFFFFFFF</color>
+    <color name="switch_thumb_hero_on">#FFFFFFFF</color>
     <color name="switch_thumb_off">#FF475569</color>
 
     <!-- Material Design Dynamic Themed Icon Colors (System Material You Palette) -->
     <color name="themed_icon_bg">@android:color/system_accent1_100</color>
     <color name="themed_icon_fg">@android:color/system_accent1_700</color>
 
-    <!-- Coffee Cup Pictogram & Squircle Widget -->
+    <!-- Coffee Cup Pictogram & Squircle Widget (WCAG 1.4.11 >= 3.0:1 Graphical Contrast) -->
     <color name="cup_badge_empty_bg">#FFC7DCFA</color>
     <color name="cup_badge_full_bg">#FFFFD2B3</color>
-    <color name="cup_liquid_empty">#FF2563EB</color>
-    <color name="cup_liquid_full">#FFFF7A28</color>
     <color name="cup_stroke_empty">#FF1D4ED8</color>
-    <color name="cup_stroke_full">#FFEA580C</color>
-    <color name="cup_steam_color">#FFEA580C</color>
-    <color name="cup_crema_color">#FFFFF7ED</color>
+    <color name="cup_stroke_full">#FFC2410C</color>
 </resources>

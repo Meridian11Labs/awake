@@ -24,6 +24,12 @@ class ToggleTrampolineActivity : Activity() {
         suppressWindowTransitions()
         super.onCreate(savedInstanceState)
 
+        if (savedInstanceState != null) {
+            finish()
+            suppressWindowTransitions()
+            return
+        }
+
         val app = applicationContext as? AwakeApp
         if (app != null) {
             app.appScope.launch {

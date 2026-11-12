@@ -1,9 +1,10 @@
 package com.meridian11.books.awake.widget
 
-import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProviderInfo
-import android.content.ComponentName
 import android.content.Intent
+import android.view.View
+import android.widget.Chronometer
+import android.widget.FrameLayout
 import androidx.test.core.app.ApplicationProvider
 import com.meridian11.books.awake.AwakeApp
 import com.meridian11.books.awake.R
@@ -50,7 +51,7 @@ class AwakeSquircleWidgetProviderTest {
     }
 
     @Test
-    fun `tapping squircle widget via ACTION_WIDGET_TOGGLE toggles Keep Awake ON and OFF and updates widget state`() =
+    fun `tapping squircle widget via AwakeWidgetActionReceiver toggles Keep Awake ON and OFF and updates widget state`() =
         runTest(UnconfinedTestDispatcher()) {
             app.configureDependencies(
                 repository = repository,
@@ -61,8 +62,8 @@ class AwakeSquircleWidgetProviderTest {
                 scope = backgroundScope
             )
 
-            val receiver = AwakeSquircleWidgetProvider()
-            val toggleIntent = Intent(app, AwakeSquircleWidgetProvider::class.java).apply {
+            val receiver = AwakeWidgetActionReceiver()
+            val toggleIntent = Intent(app, AwakeWidgetActionReceiver::class.java).apply {
                 action = AwakeSquircleWidgetProvider.ACTION_WIDGET_TOGGLE
             }
 
@@ -80,6 +81,30 @@ class AwakeSquircleWidgetProviderTest {
         }
 
     @Test
+    fun `exported AwakeSquircleWidgetProvider ignores external spoofed custom action broadcasts`() =
+        runTest(UnconfinedTestDispatcher()) {
+            app.configureDependencies(
+                repository = repository,
+                iconSwitcher = iconPort,
+                shortcutPublisher = shortcutPort,
+                enginePort = enginePort,
+                widgetUpdater = widgetPort,
+                scope = backgroundScope
+            )
+
+            val exportedProvider = AwakeSquircleWidgetProvider()
+            exportedProvider.onReceive(
+                app,
+                Intent(app, AwakeSquircleWidgetProvider::class.java).apply {
+                    action = AwakeSquircleWidgetProvider.ACTION_WIDGET_SET_DURATION
+                    putExtra(AwakeSquircleWidgetProvider.EXTRA_DURATION_MINUTES, 120)
+                }
+            )
+
+            assertFalse("Exported AppWidgetProvider must ignore spoofed custom actions", repository.stateFlow.first().isAwake)
+        }
+
+    @Test
     fun `expanded and medium widget duration controls update the timer and synchronize all surfaces`() =
         runTest(UnconfinedTestDispatcher()) {
             app.configureDependencies(
@@ -91,12 +116,12 @@ class AwakeSquircleWidgetProviderTest {
                 scope = backgroundScope
             )
 
-            val receiver = AwakeSquircleWidgetProvider()
+            val receiver = AwakeWidgetActionReceiver()
 
             // Tap 60m duration preset on expanded widget -> activates Keep Awake with 60m timer
             receiver.onReceive(
                 app,
-                Intent(app, AwakeSquircleWidgetProvider::class.java).apply {
+                Intent(app, AwakeWidgetActionReceiver::class.java).apply {
                     action = AwakeSquircleWidgetProvider.ACTION_WIDGET_SET_DURATION
                     putExtra(AwakeSquircleWidgetProvider.EXTRA_DURATION_MINUTES, 60)
                 }
@@ -110,7 +135,7 @@ class AwakeSquircleWidgetProviderTest {
             // Tap the duration cycle pill on the medium widget -> 60m moves on to 120m, still awake
             receiver.onReceive(
                 app,
-                Intent(app, AwakeSquircleWidgetProvider::class.java).apply {
+                Intent(app, AwakeWidgetActionReceiver::class.java).apply {
                     action = AwakeSquircleWidgetProvider.ACTION_WIDGET_CYCLE_DURATION
                 }
             )
@@ -119,6 +144,35 @@ class AwakeSquircleWidgetProviderTest {
             assertEquals(120, afterCycle.durationMinutes)
             assertEquals(120, widgetPort.lastState?.durationMinutes)
         }
+
+    @Test
+    fun `all 3 RemoteViews widget buckets inflate cleanly in both inactive and timed-active states`() {
+        val parent = FrameLayout(app)
+        val inactiveState = AwakeState(isAwake = false, durationMinutes = 0)
+        val timedActiveState = AwakeState(
+            isAwake = true,
+            durationMinutes = 30,
+            sessionExpiresAtEpochMillis = 900_000L
+        )
+
+        for (bucket in AwakeSquircleWidgetProvider.WidgetSizeBucket.entries) {
+            val inactiveView = AwakeSquircleWidgetProvider
+                .buildBucketRemoteViews(app, inactiveState, bucket)
+                .apply(app, parent)
+            assertNotNull("Inflated inactive view must not be null for $bucket", inactiveView)
+
+            val activeView = AwakeSquircleWidgetProvider
+                .buildBucketRemoteViews(app, timedActiveState, bucket)
+                .apply(app, parent)
+            assertNotNull("Inflated timed-active view must not be null for $bucket", activeView)
+
+            if (bucket != AwakeSquircleWidgetProvider.WidgetSizeBucket.COMPACT_1X1) {
+                val chrono = activeView.findViewById<Chronometer>(R.id.chrono_widget_remaining)
+                assertNotNull("Medium/Expanded widgets must include live countdown Chronometer", chrono)
+                assertEquals(View.VISIBLE, chrono.visibility)
+            }
+        }
+    }
 
     @Test
     fun `resolveVisualSpec returns Filled Cup resources when active and Half-Empty Cup resources when deactive`() {

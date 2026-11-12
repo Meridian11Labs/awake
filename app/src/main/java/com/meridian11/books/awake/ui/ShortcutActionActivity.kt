@@ -17,23 +17,42 @@ class ShortcutActionActivity : Activity() {
         suppressWindowTransitions()
         super.onCreate(savedInstanceState)
 
+        if (savedInstanceState != null) {
+            finish()
+            suppressWindowTransitions()
+            return
+        }
+
         val app = applicationContext as? AwakeApp
         val action = intent?.action
         if (app != null) {
             app.appScope.launch {
-                when (action) {
-                    AndroidShortcutPublisher.ACTION_SHORTCUT_TOGGLE_AWAKE -> {
-                        app.controller.toggle()
+                try {
+                    when (action) {
+                        AndroidShortcutPublisher.ACTION_SHORTCUT_TOGGLE_AWAKE -> {
+                            AndroidShortcutPublisher.reportShortcutUsed(
+                                this@ShortcutActionActivity,
+                                AndroidShortcutPublisher.ID_STATUS_TOGGLE
+                            )
+                            app.controller.toggle()
+                        }
+                        AndroidShortcutPublisher.ACTION_SHORTCUT_CYCLE_TIMER -> {
+                            AndroidShortcutPublisher.reportShortcutUsed(
+                                this@ShortcutActionActivity,
+                                AndroidShortcutPublisher.ID_PRESET_TIMER
+                            )
+                            app.controller.cycleDurationPresetAndApply()
+                        }
                     }
-                    AndroidShortcutPublisher.ACTION_SHORTCUT_CYCLE_TIMER -> {
-                        app.controller.cycleDurationPresetAndApply()
-                    }
+                } finally {
+                    finish()
+                    suppressWindowTransitions()
                 }
             }
+        } else {
+            finish()
+            suppressWindowTransitions()
         }
-
-        finish()
-        suppressWindowTransitions()
     }
 
     private fun suppressWindowTransitions() {

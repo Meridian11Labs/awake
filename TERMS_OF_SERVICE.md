@@ -1,6 +1,6 @@
-# Terms of Service — Awake for Googlebooks & Android Desktop
+# Terms of Service — Awake for Googlebooks
 
-**Effective Date:** November 4, 2026  
+**Effective Date:** November 11, 2026  
 **Application Name:** Awake (`com.meridian11.books.awake`)  
 **Owner:** **Meridian11 LLC**  
 **Contact Email:** [meridian11labs@gmail.com](mailto:meridian11labs@gmail.com)
@@ -11,7 +11,7 @@
 
 **Awake** ("the Application"), including its source code, user interface design, coffee cup pictograms, documentation, and trademarks, is owned, designed, and built by **Meridian11 LLC**. Copyright © 2026 Meridian11 LLC. All rights reserved.
 
-Subject to your compliance with these Terms of Service, Meridian11 LLC grants you a personal, revocable, non-exclusive, non-transferable, limited license to install and use the Application on compatible Googlebook, Chromebook, and Android devices that you own or control.
+Subject to your compliance with these Terms of Service, Meridian11 LLC grants you a personal, revocable, non-exclusive, non-transferable, limited license to install and use the Application on compatible Googlebook devices that you own or control.
 
 ---
 
@@ -19,10 +19,10 @@ Subject to your compliance with these Terms of Service, Meridian11 LLC grants yo
 
 Awake is a system utility designed to override normal display sleep and processor suspend timers at your explicit direction. By using the Application, you acknowledge and agree that:
 
-1. **Power Consumption & Heat Generation:** Keeping a device's CPU and display awake continuously consumes battery power and generates heat, especially if a laptop or tablet is placed inside an enclosed bag, sleeve, or backpack.
+1. **Power Consumption & Heat Generation:** Keeping a laptop's CPU and display awake continuously consumes battery power and generates heat, especially if placed inside an enclosed bag, sleeve, or backpack.
 2. **Safety Guardrails:** Awake enables **"Backpack Safety: Auto-Off When Lid Closes"** and **"Battery Guard: Auto-Off Below 20% Unplugged"** by default. Meridian11 LLC strongly recommends keeping these guardrails enabled at all times.
 3. **Display Care:** Leaving static content displayed at high brightness for extended periods can contribute to display image retention or burn-in on certain OLED/LCD panels.
-4. **Assumption of Risk:** You assume full responsibility for monitoring your device's temperature, battery charge, and physical ventilation while Keep-Awake is active.
+4. **Assumption of Risk:** You assume full responsibility for monitoring your Googlebook's temperature, battery charge, and physical ventilation while Keep-Awake is active.
 
 ---
 

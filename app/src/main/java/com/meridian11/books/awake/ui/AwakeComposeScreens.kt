@@ -1,5 +1,7 @@
 package com.meridian11.books.awake.ui
 
+import android.os.SystemClock
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -17,6 +19,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -25,23 +29,37 @@ import androidx.compose.foundation.layout.captionBar
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,8 +74,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -65,9 +86,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.meridian11.books.awake.R
 import com.meridian11.books.awake.domain.AwakeState
 import com.meridian11.books.awake.platform.AndroidShortcutPublisher
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlin.math.sin
 
 val AwakeSansFontFamily = FontFamily(
@@ -94,6 +120,7 @@ data class AwakeThemeColors(
     val switchTrackOff: Color,
     val switchTrackOffStroke: Color,
     val switchThumbOn: Color,
+    val switchThumbHeroOn: Color,
     val switchThumbOff: Color,
     val cupBadgeEmptyBg: Color,
     val cupBadgeFullBg: Color,
@@ -101,57 +128,77 @@ data class AwakeThemeColors(
     val cupIconTintActive: Color
 )
 
+/**
+ * Single source of truth for Awake's Light & Dark Material 3 Expressive palette,
+ * resolved directly from `res/values/colors.xml` and `res/values-night/colors.xml`
+ * so Compose and AppWidget XML surfaces always match 1:1.
+ */
 @Composable
-fun rememberAwakeThemeColors(darkTheme: Boolean = isSystemInDarkTheme()): AwakeThemeColors {
-    return remember(darkTheme) {
-        if (darkTheme) {
-            AwakeThemeColors(
-                windowBg = Color(0xFF0F172A),
-                cardBg = Color(0xFF1E293B),
-                cardStroke = Color(0xFF334155),
-                tonalTrackBg = Color(0xFF0F172A),
-                heroInactiveBg = Color(0xFF172554),
-                heroActiveBg = Color(0xFF431407),
-                textPrimary = Color(0xFFF8FAFC),
-                textSecondary = Color(0xFF94A3B8),
-                chipSelectedBg = Color(0xFF3B82F6),
-                chipSelectedText = Color(0xFFFFFFFF),
-                chipUnselectedText = Color(0xFFCBD5E1),
-                switchTrackOn = Color(0xFF3B82F6),
-                switchTrackHeroOn = Color(0xFFFF7A28),
-                switchTrackOff = Color(0xFF334155),
-                switchTrackOffStroke = Color(0xFF64748B),
-                switchThumbOn = Color(0xFFFFFFFF),
-                switchThumbOff = Color(0xFF94A3B8),
-                cupBadgeEmptyBg = Color(0xFF1E3A8A),
-                cupBadgeFullBg = Color(0xFF7C2D12),
-                cupIconTintInactive = Color(0xFF93C5FD),
-                cupIconTintActive = Color(0xFFFFB88C)
-            )
-        } else {
-            AwakeThemeColors(
-                windowBg = Color(0xFFF0F4F9),
-                cardBg = Color(0xFFFFFFFF),
-                cardStroke = Color(0xFFE2E8F0),
-                tonalTrackBg = Color(0xFFE8EFF8),
-                heroInactiveBg = Color(0xFFDCE8FA),
-                heroActiveBg = Color(0xFFFFE6D5),
-                textPrimary = Color(0xFF0F172A),
-                textSecondary = Color(0xFF475569),
-                chipSelectedBg = Color(0xFF2563EB),
-                chipSelectedText = Color(0xFFFFFFFF),
-                chipUnselectedText = Color(0xFF1E3A5F),
-                switchTrackOn = Color(0xFF2563EB),
-                switchTrackHeroOn = Color(0xFFFF7A28),
-                switchTrackOff = Color(0xFFD5E0F0),
-                switchTrackOffStroke = Color(0xFF94A3B8),
-                switchThumbOn = Color(0xFFFFFFFF),
-                switchThumbOff = Color(0xFF475569),
-                cupBadgeEmptyBg = Color(0xFFC7DCFA),
-                cupBadgeFullBg = Color(0xFFFFD2B3),
-                cupIconTintInactive = Color(0xFF1D4ED8),
-                cupIconTintActive = Color(0xFFEA580C)
-            )
+fun rememberAwakeThemeColors(): AwakeThemeColors {
+    return AwakeThemeColors(
+        windowBg = colorResource(R.color.window_bg),
+        cardBg = colorResource(R.color.surface_card_bg),
+        cardStroke = colorResource(R.color.surface_card_stroke),
+        tonalTrackBg = colorResource(R.color.surface_tonal_bg),
+        heroInactiveBg = colorResource(R.color.hero_card_inactive_bg),
+        heroActiveBg = colorResource(R.color.hero_card_active_bg),
+        textPrimary = colorResource(R.color.dialog_text_primary),
+        textSecondary = colorResource(R.color.dialog_text_secondary),
+        chipSelectedBg = colorResource(R.color.chip_selected_bg),
+        chipSelectedText = colorResource(R.color.chip_selected_text),
+        chipUnselectedText = colorResource(R.color.chip_unselected_text),
+        switchTrackOn = colorResource(R.color.switch_track_on),
+        switchTrackHeroOn = colorResource(R.color.switch_track_hero_on),
+        switchTrackOff = colorResource(R.color.switch_track_off),
+        switchTrackOffStroke = colorResource(R.color.switch_track_off_stroke),
+        switchThumbOn = colorResource(R.color.switch_thumb_on),
+        switchThumbHeroOn = colorResource(R.color.switch_thumb_hero_on),
+        switchThumbOff = colorResource(R.color.switch_thumb_off),
+        cupBadgeEmptyBg = colorResource(R.color.cup_badge_empty_bg),
+        cupBadgeFullBg = colorResource(R.color.cup_badge_full_bg),
+        cupIconTintInactive = colorResource(R.color.cup_stroke_empty),
+        cupIconTintActive = colorResource(R.color.cup_stroke_full)
+    )
+}
+
+@Composable
+fun AwakeMaterialTheme(
+    colors: AwakeThemeColors,
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    val scheme = if (darkTheme) {
+        darkColorScheme(
+            primary = colors.chipSelectedBg,
+            onPrimary = colors.chipSelectedText,
+            secondary = colors.switchTrackHeroOn,
+            onSecondary = colors.switchThumbHeroOn,
+            background = colors.windowBg,
+            onBackground = colors.textPrimary,
+            surface = colors.cardBg,
+            onSurface = colors.textPrimary,
+            surfaceVariant = colors.tonalTrackBg,
+            onSurfaceVariant = colors.textSecondary,
+            outline = colors.cardStroke
+        )
+    } else {
+        lightColorScheme(
+            primary = colors.chipSelectedBg,
+            onPrimary = colors.chipSelectedText,
+            secondary = colors.switchTrackHeroOn,
+            onSecondary = colors.switchThumbHeroOn,
+            background = colors.windowBg,
+            onBackground = colors.textPrimary,
+            surface = colors.cardBg,
+            onSurface = colors.textPrimary,
+            surfaceVariant = colors.tonalTrackBg,
+            onSurfaceVariant = colors.textSecondary,
+            outline = colors.cardStroke
+        )
+    }
+    MaterialTheme(colorScheme = scheme) {
+        CompositionLocalProvider(LocalContentColor provides colors.textPrimary) {
+            content()
         }
     }
 }
@@ -190,6 +237,10 @@ fun CoffeeCupPictogramComposable(
         label = "cupIconTint"
     )
 
+    val vesselPath = remember { Path() }
+    val liquidWavePath = remember { Path() }
+    val cupHandlePath = remember { Path() }
+
     Canvas(modifier = modifier.size(size)) {
         val w = this.size.width
         val h = this.size.height
@@ -212,40 +263,39 @@ fun CoffeeCupPictogramComposable(
         val cupBottom = 68f * s
         val cupCorner = 9f * s
 
-        val cupPath = Path().apply {
-            addRoundRect(
-                RoundRect(
-                    rect = Rect(cupLeft, cupTop, cupRight, cupBottom),
-                    topLeft = CornerRadius.Zero,
-                    topRight = CornerRadius.Zero,
-                    bottomRight = CornerRadius(cupCorner, cupCorner),
-                    bottomLeft = CornerRadius(cupCorner, cupCorner)
-                )
+        vesselPath.reset()
+        vesselPath.addRoundRect(
+            RoundRect(
+                rect = Rect(cupLeft, cupTop, cupRight, cupBottom),
+                topLeft = CornerRadius.Zero,
+                topRight = CornerRadius.Zero,
+                bottomRight = CornerRadius(cupCorner, cupCorner),
+                bottomLeft = CornerRadius(cupCorner, cupCorner)
             )
-        }
+        )
 
         // 3. Clipped Single-Tone Material Themed Liquid Fill (0.5f = Half-Empty, 1.0f = Filled)
-        clipPath(cupPath) {
+        clipPath(vesselPath) {
             val cupHeight = cupBottom - cupTop
             val liquidTop = cupBottom - cupHeight * fillLevel.coerceIn(0f, 1f)
-            val wavePath = Path().apply {
-                val waveAmp = if (fillLevel in 0.52f..0.98f) 2.2f * s else 0f
-                moveTo(cupLeft, cupBottom)
-                lineTo(cupLeft, liquidTop)
-                val midX = (cupLeft + cupRight) / 2f
-                val waveOffset = sin(fillLevel * Math.PI * 2.0).toFloat() * waveAmp
-                cubicTo(
-                    cupLeft + (midX - cupLeft) * 0.5f,
-                    liquidTop - waveOffset,
-                    midX + (cupRight - midX) * 0.5f,
-                    liquidTop + waveOffset,
-                    cupRight,
-                    liquidTop
-                )
-                lineTo(cupRight, cupBottom)
-                close()
-            }
-            drawPath(path = wavePath, color = iconTint)
+            val waveAmp = if (fillLevel in 0.52f..0.98f) 2.2f * s else 0f
+            val midX = (cupLeft + cupRight) / 2f
+            val waveOffset = sin(fillLevel * Math.PI * 2.0).toFloat() * waveAmp
+
+            liquidWavePath.reset()
+            liquidWavePath.moveTo(cupLeft, cupBottom)
+            liquidWavePath.lineTo(cupLeft, liquidTop)
+            liquidWavePath.cubicTo(
+                cupLeft + (midX - cupLeft) * 0.5f,
+                liquidTop - waveOffset,
+                midX + (cupRight - midX) * 0.5f,
+                liquidTop + waveOffset,
+                cupRight,
+                liquidTop
+            )
+            liquidWavePath.lineTo(cupRight, cupBottom)
+            liquidWavePath.close()
+            drawPath(path = liquidWavePath, color = iconTint)
 
             // Negative-space rim cut (in badge background color) so the icon remains strictly 1-color Material themed
             if (steamAlpha > 0.05f) {
@@ -260,25 +310,24 @@ fun CoffeeCupPictogramComposable(
 
         // 4. Cup Bowl Outline (Same Material Theme Icon Tint)
         drawPath(
-            path = cupPath,
+            path = vesselPath,
             color = iconTint,
             style = Stroke(width = 4.5f * s, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
 
         // 5. Cup Handle
-        val handlePath = Path().apply {
-            moveTo(66f * s, 42f * s)
-            lineTo(72f * s, 42f * s)
-            arcTo(
-                rect = Rect(65f * s, 42f * s, 79f * s, 60f * s),
-                startAngleDegrees = -90f,
-                sweepAngleDegrees = 180f,
-                forceMoveTo = false
-            )
-            lineTo(66f * s, 60f * s)
-        }
+        cupHandlePath.reset()
+        cupHandlePath.moveTo(66f * s, 42f * s)
+        cupHandlePath.lineTo(72f * s, 42f * s)
+        cupHandlePath.arcTo(
+            rect = Rect(65f * s, 42f * s, 79f * s, 60f * s),
+            startAngleDegrees = -90f,
+            sweepAngleDegrees = 180f,
+            forceMoveTo = false
+        )
+        cupHandlePath.lineTo(66f * s, 60f * s)
         drawPath(
-            path = handlePath,
+            path = cupHandlePath,
             color = iconTint,
             style = Stroke(width = 4.5f * s, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
@@ -341,7 +390,9 @@ private fun MaterialAddIcon(tint: Color, modifier: Modifier = Modifier) {
 }
 
 /**
- * Custom Material 3 Expressive 52dp x 30dp Pill Switch in Jetpack Compose.
+ * Custom Material 3 Expressive 52dp x 32dp Pill Switch in Jetpack Compose
+ * with true [Modifier.toggleable] `ToggleableState` semantics, keyboard/hover indication,
+ * and M3 Expressive spring thumb morph (`18dp` -> `22dp`).
  */
 @Composable
 fun AwakeM3Switch(
@@ -352,25 +403,31 @@ fun AwakeM3Switch(
     useHeroOrangeWhenChecked: Boolean = false
 ) {
     val activeTrackColor = if (useHeroOrangeWhenChecked) colors.switchTrackHeroOn else colors.switchTrackOn
+    val activeThumbColor = if (useHeroOrangeWhenChecked) colors.switchThumbHeroOn else colors.switchThumbOn
     val trackColor by animateColorAsState(
         targetValue = if (checked) activeTrackColor else colors.switchTrackOff,
         animationSpec = tween(durationMillis = 200),
         label = "switchTrackColor"
     )
     val thumbColor by animateColorAsState(
-        targetValue = if (checked) colors.switchThumbOn else colors.switchThumbOff,
+        targetValue = if (checked) activeThumbColor else colors.switchThumbOff,
         animationSpec = tween(durationMillis = 200),
         label = "switchThumbColor"
     )
+    val thumbSize by animateDpAsState(
+        targetValue = if (checked) 22.dp else 18.dp,
+        animationSpec = spring(dampingRatio = 0.72f, stiffness = Spring.StiffnessMediumLow),
+        label = "switchThumbSize"
+    )
     val thumbOffset by animateDpAsState(
-        targetValue = if (checked) 25.dp else 5.dp,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        targetValue = if (checked) 25.dp else 6.dp,
+        animationSpec = spring(dampingRatio = 0.72f, stiffness = Spring.StiffnessMediumLow),
         label = "switchThumbOffset"
     )
 
     Box(
         modifier = modifier
-            .size(width = 52.dp, height = 30.dp)
+            .size(width = 52.dp, height = 32.dp)
             .clip(CircleShape)
             .background(trackColor)
             .then(
@@ -380,19 +437,19 @@ fun AwakeM3Switch(
                     Modifier
                 }
             )
-            .clickable(
+            .toggleable(
+                value = checked,
                 role = Role.Switch,
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                onCheckedChange(!checked)
-            },
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(bounded = false, radius = 24.dp),
+                onValueChange = onCheckedChange
+            ),
         contentAlignment = Alignment.CenterStart
     ) {
         Box(
             modifier = Modifier
                 .offset(x = thumbOffset)
-                .size(22.dp)
+                .size(thumbSize)
                 .clip(CircleShape)
                 .background(thumbColor)
         )
@@ -415,6 +472,7 @@ fun <T> SegmentedPillRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .selectableGroup()
             .clip(CircleShape)
             .background(trackColor)
             .padding(4.dp),
@@ -433,11 +491,15 @@ fun <T> SegmentedPillRow(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(38.dp)
+                    .heightIn(min = 42.dp)
                     .clip(CircleShape)
                     .background(bgColor)
-                    .clickable { onSelect(value) }
-                    .padding(horizontal = 6.dp)
+                    .selectable(
+                        selected = isSelected,
+                        role = Role.RadioButton,
+                        onClick = { onSelect(value) }
+                    )
+                    .padding(horizontal = 6.dp, vertical = 8.dp)
                     .testTag("${tagPrefix}_$value"),
                 contentAlignment = Alignment.Center
             ) {
@@ -455,18 +517,18 @@ fun <T> SegmentedPillRow(
     }
 }
 
-/**
- * Full Desktop / Googlebook App Window (`SettingsDialogActivity`) built in Jetpack Compose.
- * - Preserves the opaque, non-blurred Material 3 Expressive Pastel Blue / Pastel Orange
- *   2-column design with a seamless window header (`captionBar`) and an outline-free
- *   blue/orange Hero Toggle Container.
- */
 enum class LegalSubpageTab {
     ABOUT,
     PRIVACY,
     TERMS
 }
 
+/**
+ * Full Googlebook App Window (`SettingsDialogActivity`) built in Jetpack Compose.
+ * - Preserves the opaque, non-blurred Material 3 Expressive Pastel Blue / Pastel Orange
+ *   design with a seamless window header (`captionBar`) and an outline-free
+ *   blue/orange Hero Toggle Container.
+ */
 @Composable
 fun SettingsWindowScreen(
     state: AwakeState,
@@ -478,7 +540,6 @@ fun SettingsWindowScreen(
     onUpdateGuardrails: (
         lidClose: Boolean,
         lowBattery: Boolean,
-        charger: Boolean,
         dimming: Boolean
     ) -> Unit,
     onCloseWindow: () -> Unit
@@ -488,87 +549,96 @@ fun SettingsWindowScreen(
         .union(WindowInsets.captionBar)
         .asPaddingValues()
 
-    var activeLegalTab by remember { mutableStateOf<LegalSubpageTab?>(null) }
+    var activeLegalTab by rememberSaveable { mutableStateOf<LegalSubpageTab?>(null) }
 
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colors.windowBg)
-            .padding(windowInsetsPadding)
-    ) {
-        val isTwoColumn = maxWidth >= 640.dp
+    BackHandler(enabled = activeLegalTab != null) {
+        activeLegalTab = null
+    }
 
-        val currentLegalTab = activeLegalTab
-        if (currentLegalTab != null) {
-            LegalAndAboutSubpageScreen(
-                selectedTab = currentLegalTab,
-                colors = colors,
-                onSelectTab = { activeLegalTab = it },
-                onBack = { activeLegalTab = null }
-            )
-        } else if (isTwoColumn) {
-            val scrollState = rememberScrollState()
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.Top
+    AwakeMaterialTheme(colors = colors) {
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(colors.windowBg)
+                .padding(windowInsetsPadding),
+            contentAlignment = Alignment.TopCenter
+        ) {
+            val isTwoColumn = maxWidth >= 800.dp
+
+            val currentLegalTab = activeLegalTab
+            if (currentLegalTab != null) {
+                LegalAndAboutSubpageScreen(
+                    selectedTab = currentLegalTab,
+                    colors = colors,
+                    onSelectTab = { activeLegalTab = it },
+                    onBack = { activeLegalTab = null }
+                )
+            } else if (isTwoColumn) {
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 1040.dp)
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalAlignment = Alignment.Top
                     ) {
-                        HeroToggleCard(state = state, colors = colors, onToggleAwake = onToggleAwake)
-                        DurationPresetsCard(state = state, colors = colors, onSelectDuration = onSelectDuration)
-                        QsAndWidgetCard(colors = colors, onAddQsTile = onAddQsTile, onPinWidget = onPinWidget)
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            HeroToggleCard(state = state, colors = colors, onToggleAwake = onToggleAwake)
+                            DurationPresetsCard(state = state, colors = colors, onSelectDuration = onSelectDuration)
+                            QsAndWidgetCard(colors = colors, onAddQsTile = onAddQsTile, onPinWidget = onPinWidget)
+                        }
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            DirectToggleCard(state = state, colors = colors, onToggleDirectTap = onToggleDirectTap)
+                            GuardrailsCard(
+                                state = state,
+                                colors = colors,
+                                onUpdateGuardrails = onUpdateGuardrails,
+                                onCloseWindow = onCloseWindow
+                            )
+                        }
                     }
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        DirectToggleCard(state = state, colors = colors, onToggleDirectTap = onToggleDirectTap)
-                        GuardrailsCard(
-                            state = state,
-                            colors = colors,
-                            onUpdateGuardrails = onUpdateGuardrails,
-                            onCloseWindow = onCloseWindow
-                        )
-                    }
+                    LegalFooterRow(
+                        colors = colors,
+                        onOpenTab = { activeLegalTab = it }
+                    )
                 }
-                LegalFooterRow(
-                    colors = colors,
-                    onOpenTab = { activeLegalTab = it }
-                )
-            }
-        } else {
-            val scrollState = rememberScrollState()
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                HeroToggleCard(state = state, colors = colors, onToggleAwake = onToggleAwake)
-                DurationPresetsCard(state = state, colors = colors, onSelectDuration = onSelectDuration)
-                DirectToggleCard(state = state, colors = colors, onToggleDirectTap = onToggleDirectTap)
-                QsAndWidgetCard(colors = colors, onAddQsTile = onAddQsTile, onPinWidget = onPinWidget)
-                GuardrailsCard(
-                    state = state,
-                    colors = colors,
-                    onUpdateGuardrails = onUpdateGuardrails,
-                    onCloseWindow = onCloseWindow
-                )
-                LegalFooterRow(
-                    colors = colors,
-                    onOpenTab = { activeLegalTab = it }
-                )
+            } else {
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 760.dp)
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    HeroToggleCard(state = state, colors = colors, onToggleAwake = onToggleAwake)
+                    DurationPresetsCard(state = state, colors = colors, onSelectDuration = onSelectDuration)
+                    DirectToggleCard(state = state, colors = colors, onToggleDirectTap = onToggleDirectTap)
+                    QsAndWidgetCard(colors = colors, onAddQsTile = onAddQsTile, onPinWidget = onPinWidget)
+                    GuardrailsCard(
+                        state = state,
+                        colors = colors,
+                        onUpdateGuardrails = onUpdateGuardrails,
+                        onCloseWindow = onCloseWindow
+                    )
+                    LegalFooterRow(
+                        colors = colors,
+                        onOpenTab = { activeLegalTab = it }
+                    )
+                }
             }
         }
     }
@@ -580,7 +650,33 @@ private fun HeroToggleCard(
     colors: AwakeThemeColors,
     onToggleAwake: () -> Unit
 ) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var nowElapsedMillis by remember(state.isAwake, state.sessionExpiresAtEpochMillis) {
+        mutableLongStateOf(SystemClock.elapsedRealtime())
+    }
+    if (state.isAwake && state.sessionExpiresAtEpochMillis > 0L) {
+        LaunchedEffect(lifecycleOwner, state.sessionExpiresAtEpochMillis) {
+            lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (isActive) {
+                    nowElapsedMillis = SystemClock.elapsedRealtime()
+                    delay(1_000L)
+                }
+            }
+        }
+    }
+
     val durationLabel = AndroidShortcutPublisher.formatDurationLong(state.durationMinutes)
+    val activeCountdownText = if (
+        state.isAwake &&
+        state.sessionExpiresAtEpochMillis > 0L &&
+        nowElapsedMillis > 0L &&
+        state.sessionExpiresAtEpochMillis > nowElapsedMillis
+    ) {
+        formatLiveRemaining(state.sessionExpiresAtEpochMillis - nowElapsedMillis)
+    } else {
+        durationLabel
+    }
+
     val bg by animateColorAsState(
         targetValue = if (state.isAwake) colors.heroActiveBg else colors.heroInactiveBg,
         animationSpec = tween(durationMillis = 250),
@@ -593,7 +689,7 @@ private fun HeroToggleCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(28.dp))
             .background(bg)
-            .clickable { onToggleAwake() }
+            .clickable(role = Role.Button) { onToggleAwake() }
             .padding(18.dp)
             .testTag("card_hero_toggle"),
         verticalAlignment = Alignment.CenterVertically
@@ -612,13 +708,14 @@ private fun HeroToggleCard(
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp,
                 color = colors.textPrimary,
-                maxLines = 1,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.testTag("tv_dialog_title")
             )
             Spacer(modifier = Modifier.height(3.dp))
             Text(
                 text = if (state.isAwake) {
-                    "Filled Cup ($durationLabel) • Preventing Googlebook sleep"
+                    "Filled Cup ($activeCountdownText) • Preventing Googlebook sleep"
                 } else {
                     "Half-Empty Cup ($durationLabel) • Normal Googlebook sleep"
                 },
@@ -637,6 +734,18 @@ private fun HeroToggleCard(
             useHeroOrangeWhenChecked = true,
             modifier = Modifier.testTag("switch_master_awake")
         )
+    }
+}
+
+private fun formatLiveRemaining(remainingMillis: Long): String {
+    val totalSeconds = ((remainingMillis.coerceAtLeast(0L) + 999L) / 1_000L)
+    val hours = totalSeconds / 3600L
+    val minutes = (totalSeconds % 3600L) / 60L
+    val seconds = totalSeconds % 60L
+    return when {
+        hours > 0L -> "${hours}h ${minutes}m left"
+        minutes > 0L -> "${minutes}m ${seconds.toString().padStart(2, '0')}s left"
+        else -> "${seconds}s left"
     }
 }
 
@@ -660,7 +769,8 @@ private fun DurationPresetsCard(
             fontWeight = FontWeight.Bold,
             fontSize = 15.sp,
             color = colors.textPrimary,
-            maxLines = 1
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
         Spacer(modifier = Modifier.height(10.dp))
         SegmentedPillRow(
@@ -690,6 +800,7 @@ private fun DirectToggleCard(
             .clip(RoundedCornerShape(26.dp))
             .background(colors.cardBg)
             .border(1.dp, colors.cardStroke, RoundedCornerShape(26.dp))
+            .clickable { onToggleDirectTap(!state.directToggleOnTap) }
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -700,7 +811,8 @@ private fun DirectToggleCard(
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = colors.textPrimary,
-                maxLines = 1
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(3.dp))
             Text(
@@ -746,7 +858,8 @@ private fun QsAndWidgetCard(
             fontWeight = FontWeight.Bold,
             fontSize = 15.sp,
             color = colors.textPrimary,
-            maxLines = 1
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
         Spacer(modifier = Modifier.height(3.dp))
         Text(
@@ -765,11 +878,11 @@ private fun QsAndWidgetCard(
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .height(38.dp)
+                    .heightIn(min = 44.dp)
                     .clip(CircleShape)
                     .background(colors.chipSelectedBg)
-                    .clickable { onAddQsTile() }
-                    .padding(horizontal = 10.dp)
+                    .clickable(role = Role.Button) { onAddQsTile() }
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
                     .testTag("btn_add_qs_tile"),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -782,17 +895,18 @@ private fun QsAndWidgetCard(
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                     color = colors.chipSelectedText,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
             Row(
                 modifier = Modifier
                     .weight(1f)
-                    .height(38.dp)
+                    .heightIn(min = 44.dp)
                     .clip(CircleShape)
                     .background(colors.tonalTrackBg)
-                    .clickable { onPinWidget() }
-                    .padding(horizontal = 10.dp)
+                    .clickable(role = Role.Button) { onPinWidget() }
+                    .padding(horizontal = 10.dp, vertical = 8.dp)
                     .testTag("btn_pin_widget"),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -805,7 +919,8 @@ private fun QsAndWidgetCard(
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                     color = colors.chipUnselectedText,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -819,7 +934,6 @@ private fun GuardrailsCard(
     onUpdateGuardrails: (
         lidClose: Boolean,
         lowBattery: Boolean,
-        charger: Boolean,
         dimming: Boolean
     ) -> Unit,
     onCloseWindow: () -> Unit
@@ -831,7 +945,7 @@ private fun GuardrailsCard(
             .background(colors.cardBg)
             .border(1.dp, colors.cardStroke, RoundedCornerShape(26.dp))
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
             text = "Smart Googlebook Guardrails",
@@ -839,7 +953,8 @@ private fun GuardrailsCard(
             fontWeight = FontWeight.Bold,
             fontSize = 15.sp,
             color = colors.textPrimary,
-            maxLines = 1
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
         )
 
         GuardrailSwitchRow(
@@ -851,7 +966,6 @@ private fun GuardrailsCard(
                 onUpdateGuardrails(
                     it,
                     state.lowBatteryCutoffEnabled,
-                    state.autoAwakeOnChargerEnabled,
                     state.allowScreenDimming
                 )
             }
@@ -866,7 +980,6 @@ private fun GuardrailsCard(
                 onUpdateGuardrails(
                     state.lidCloseAutoShutoffEnabled,
                     it,
-                    state.autoAwakeOnChargerEnabled,
                     state.allowScreenDimming
                 )
             }
@@ -881,7 +994,6 @@ private fun GuardrailsCard(
                 onUpdateGuardrails(
                     state.lidCloseAutoShutoffEnabled,
                     state.lowBatteryCutoffEnabled,
-                    state.autoAwakeOnChargerEnabled,
                     it
                 )
             }
@@ -895,11 +1007,11 @@ private fun GuardrailsCard(
         ) {
             Box(
                 modifier = Modifier
-                    .height(38.dp)
+                    .heightIn(min = 44.dp)
                     .clip(CircleShape)
                     .background(colors.chipSelectedBg)
-                    .clickable { onCloseWindow() }
-                    .padding(horizontal = 24.dp)
+                    .clickable(role = Role.Button) { onCloseWindow() }
+                    .padding(horizontal = 26.dp, vertical = 10.dp)
                     .testTag("btn_close_settings"),
                 contentAlignment = Alignment.Center
             ) {
@@ -925,7 +1037,12 @@ private fun GuardrailSwitchRow(
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable { onCheckedChange(!checked) }
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -946,20 +1063,21 @@ private fun GuardrailSwitchRow(
 }
 
 /**
- * Subtle, centered footer row at the bottom of the main Settings window providing
+ * Subtle, centered wrapping footer row at the bottom of the main Settings window providing
  * one-click access to About, Privacy Policy, and Terms of Service.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LegalFooterRow(
     colors: AwakeThemeColors,
     onOpenTab: (LegalSubpageTab) -> Unit
 ) {
-    Row(
+    FlowRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 2.dp, bottom = 4.dp),
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.Center
     ) {
         SubtleFooterLink(
             label = "About",
@@ -982,12 +1100,17 @@ private fun LegalFooterRow(
             onClick = { onOpenTab(LegalSubpageTab.TERMS) }
         )
         FooterDot(colors)
-        Text(
-            text = "© Meridian11 LLC",
-            fontFamily = AwakeSansFontFamily,
-            fontSize = 11.sp,
-            color = colors.textSecondary
-        )
+        Box(
+            modifier = Modifier.heightIn(min = 36.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "© Meridian11 LLC",
+                fontFamily = AwakeSansFontFamily,
+                fontSize = 12.sp,
+                color = colors.textSecondary
+            )
+        }
     }
 }
 
@@ -998,29 +1121,41 @@ private fun SubtleFooterLink(
     colors: AwakeThemeColors,
     onClick: () -> Unit
 ) {
-    Text(
-        text = label,
-        fontFamily = AwakeSansFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        color = colors.textSecondary,
+    Box(
         modifier = Modifier
+            .heightIn(min = 36.dp)
             .clip(CircleShape)
-            .clickable { onClick() }
-            .padding(horizontal = 6.dp, vertical = 3.dp)
-            .testTag(testTag)
-    )
+            .clickable(role = Role.Button) { onClick() }
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .testTag(testTag),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            fontFamily = AwakeSansFontFamily,
+            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp,
+            color = colors.textSecondary
+        )
+    }
 }
 
 @Composable
 private fun FooterDot(colors: AwakeThemeColors) {
-    Text(
-        text = "•",
-        fontFamily = AwakeSansFontFamily,
-        fontSize = 11.sp,
-        color = colors.textSecondary,
-        modifier = Modifier.padding(horizontal = 2.dp)
-    )
+    Box(
+        modifier = Modifier
+            .heightIn(min = 36.dp)
+            .padding(horizontal = 2.dp)
+            .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = "•",
+            fontFamily = AwakeSansFontFamily,
+            fontSize = 12.sp,
+            color = colors.textSecondary
+        )
+    }
 }
 
 /**
@@ -1034,8 +1169,13 @@ private fun LegalAndAboutSubpageScreen(
     onBack: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    LaunchedEffect(selectedTab) {
+        scrollState.scrollTo(0)
+    }
+
     Column(
         modifier = Modifier
+            .widthIn(max = 760.dp)
             .fillMaxSize()
             .padding(horizontal = 20.dp, vertical = 14.dp)
             .testTag("screen_legal_subpage"),
@@ -1049,11 +1189,11 @@ private fun LegalAndAboutSubpageScreen(
         ) {
             Row(
                 modifier = Modifier
-                    .height(36.dp)
+                    .heightIn(min = 42.dp)
                     .clip(CircleShape)
                     .background(colors.tonalTrackBg)
-                    .clickable { onBack() }
-                    .padding(horizontal = 14.dp)
+                    .clickable(role = Role.Button) { onBack() }
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
                     .testTag("btn_legal_back"),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1086,7 +1226,7 @@ private fun LegalAndAboutSubpageScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(40.dp)
+                .selectableGroup()
                 .clip(CircleShape)
                 .background(colors.tonalTrackBg)
                 .padding(3.dp),
@@ -1104,10 +1244,15 @@ private fun LegalAndAboutSubpageScreen(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxSize()
+                        .heightIn(min = 40.dp)
                         .clip(CircleShape)
                         .background(bg)
-                        .clickable { onSelectTab(tab) }
+                        .selectable(
+                            selected = isSelected,
+                            role = Role.Tab,
+                            onClick = { onSelectTab(tab) }
+                        )
+                        .padding(horizontal = 8.dp, vertical = 8.dp)
                         .testTag(tag),
                     contentAlignment = Alignment.Center
                 ) {
@@ -1124,124 +1269,134 @@ private fun LegalAndAboutSubpageScreen(
             }
         }
 
-        // Scrollable Content Card
-        Column(
+        // Scrollable Content Card (Fixed outer clip & border, inner verticalScroll + padding)
+        val cardShape = RoundedCornerShape(26.dp)
+        SelectionContainer(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f, fill = false)
-                .verticalScroll(scrollState)
-                .clip(RoundedCornerShape(26.dp))
+                .clip(cardShape)
                 .background(colors.cardBg)
-                .border(1.dp, colors.cardStroke, RoundedCornerShape(26.dp))
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .border(1.dp, colors.cardStroke, cardShape)
         ) {
-            when (selectedTab) {
-                LegalSubpageTab.ABOUT -> {
-                    Text(
-                        text = "Awake for Googlebooks & Android Desktop",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = colors.textPrimary
-                    )
-                    val context = LocalContext.current
-                    val versionName = remember(context) {
-                        runCatching {
-                            context.packageManager.getPackageInfo(context.packageName, 0).versionName
-                        }.getOrNull() ?: "?"
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                when (selectedTab) {
+                    LegalSubpageTab.ABOUT -> {
+                        Text(
+                            text = "Awake for Googlebooks",
+                            fontFamily = AwakeSansFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = colors.textPrimary
+                        )
+                        val context = LocalContext.current
+                        val versionName = remember(context) {
+                            runCatching {
+                                context.packageManager.getPackageInfo(context.packageName, 0).versionName
+                            }.getOrNull() ?: "?"
+                        }
+                        Text(
+                            text = "Version $versionName • Package: ${context.packageName}",
+                            fontFamily = AwakeSansFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp,
+                            color = colors.textSecondary
+                        )
+                        Text(
+                            text = "Owned, designed, and built by Meridian11 LLC. Copyright © 2026 Meridian11 LLC. All rights reserved.",
+                            fontFamily = AwakeSansFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = colors.textPrimary,
+                            modifier = Modifier.testTag("tv_meridian11_ownership")
+                        )
+                        Text(
+                            text = "Awake keeps your Googlebook awake while you need it. Turn it on from the taskbar icon, the Quick Settings tile, or the widget, and it holds a wake lock until you turn it off, the timer ends, or a guardrail (lid closed, low battery) turns it off for you. It needs no internet connection.",
+                            fontFamily = AwakeSansFontFamily,
+                            fontSize = 13.sp,
+                            lineHeight = 19.sp,
+                            color = colors.textSecondary
+                        )
+                        Text(
+                            text = "Support: meridian11labs@gmail.com • github.com/Meridian11Labs/awake",
+                            fontFamily = AwakeSansFontFamily,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 12.sp,
+                            color = colors.textPrimary
+                        )
                     }
-                    Text(
-                        text = "Version $versionName • Package: ${context.packageName}",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp,
-                        color = colors.textSecondary
-                    )
-                    Text(
-                        text = "Owned, designed, and built by Meridian11 LLC. Copyright © 2026 Meridian11 LLC. All rights reserved.",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = colors.textPrimary,
-                        modifier = Modifier.testTag("tv_meridian11_ownership")
-                    )
-                    Text(
-                        text = "Awake keeps your Googlebook awake while you need it. Turn it on from the taskbar icon, the Quick Settings tile, or the widget, and it holds a wake lock until you turn it off, the timer ends, or a guardrail (lid closed, low battery) turns it off for you. It needs no internet connection.",
-                        fontFamily = AwakeSansFontFamily,
-                        fontSize = 13.sp,
-                        lineHeight = 19.sp,
-                        color = colors.textSecondary
-                    )
-                    Text(
-                        text = "Support: meridian11labs@gmail.com • github.com/Meridian11Labs/awake",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp,
-                        color = colors.textPrimary
-                    )
-                }
 
-                LegalSubpageTab.PRIVACY -> {
-                    Text(
-                        text = "Privacy Policy — Meridian11 LLC",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = colors.textPrimary
-                    )
-                    Text(
-                        text = "Effective Date: November 4, 2026 • Contact: meridian11labs@gmail.com",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp,
-                        color = colors.textSecondary
-                    )
-                    Text(
-                        text = "No internet access\n" +
-                            "Awake does not have the internet permission. It cannot send anything off your device.\n\n" +
-                            "No data collected or shared\n" +
-                            "Awake collects no personal data and shares nothing with Meridian11 LLC or anyone else. There are no ads, analytics, or crash reports.\n\n" +
-                            "Settings stay on your device\n" +
-                            "Your settings (on or off, timer, guardrails) are stored on this device only and are deleted when you uninstall Awake. While Awake is on, it checks the battery level, charger, and display state on the device to apply your guardrails; none of this is stored or sent anywhere.\n\n" +
-                            "This policy is also at https://meridian11.com/privacy/awake. Questions: meridian11labs@gmail.com.",
-                        fontFamily = AwakeSansFontFamily,
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        color = colors.textSecondary,
-                        modifier = Modifier.testTag("tv_legal_privacy_body")
-                    )
-                }
+                    LegalSubpageTab.PRIVACY -> {
+                        Text(
+                            text = "Privacy Policy — Meridian11 LLC",
+                            fontFamily = AwakeSansFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = colors.textPrimary
+                        )
+                        Text(
+                            text = "Effective Date: November 11, 2026 • Contact: meridian11labs@gmail.com",
+                            fontFamily = AwakeSansFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp,
+                            color = colors.textSecondary
+                        )
+                        Text(
+                            text = "No internet access\n" +
+                                "Awake does not declare the internet permission. It cannot transmit anything off your Googlebook.\n\n" +
+                                "No data collected or shared\n" +
+                                "Awake collects no personal data and shares nothing with Meridian11 LLC or any third party. There are no ads, analytics, or crash reporting SDKs.\n\n" +
+                                "Settings stay strictly on your device\n" +
+                                "Your preferences (on or off, timer preset, guardrails) are stored locally on this Googlebook only (cloud backup and device transfer are disabled) and are permanently deleted when you uninstall Awake. While Awake is active, it checks battery level, charger state, and display state locally in memory to apply your guardrails; none of this is stored or sent anywhere.\n\n" +
+                                "Permissions used locally\n" +
+                                "• WAKE_LOCK & FOREGROUND_SERVICE_SPECIAL_USE: Holds CPU and display wake locks while toggled ON.\n" +
+                                "• POST_NOTIFICATIONS: Shows the ongoing status notification with Turn Off and +30m controls.\n" +
+                                "• RECEIVE_BOOT_COMPLETED: Resets Awake to normal sleep after a device reboot.\n\n" +
+                                "This policy is also published at https://meridian11.com/privacy/awake. Questions: meridian11labs@gmail.com.",
+                            fontFamily = AwakeSansFontFamily,
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp,
+                            color = colors.textSecondary,
+                            modifier = Modifier.testTag("tv_legal_privacy_body")
+                        )
+                    }
 
-                LegalSubpageTab.TERMS -> {
-                    Text(
-                        text = "Terms of Service — Meridian11 LLC",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = colors.textPrimary
-                    )
-                    Text(
-                        text = "Effective Date: November 4, 2026 • Owner: Meridian11 LLC",
-                        fontFamily = AwakeSansFontFamily,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp,
-                        color = colors.textSecondary
-                    )
-                    Text(
-                        text = "1. License\n" +
-                            "Awake is owned by Meridian11 LLC. You may use it on your own devices under a personal, non-exclusive, non-transferable license.\n\n" +
-                            "2. Battery and heat\n" +
-                            "Keeping a screen and processor awake uses battery and makes heat. We recommend keeping 'Backpack Safety' and 'Battery Guard' turned on. You are responsible for your device's battery, temperature, and screen.\n\n" +
-                            "3. No warranty\n" +
-                            "THE APPLICATION IS PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY LAW, MERIDIAN11 LLC SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR HARDWARE DAMAGES ARISING OUT OF YOUR USE OF THE APPLICATION.\n\n" +
-                            "Questions: meridian11labs@gmail.com",
-                        fontFamily = AwakeSansFontFamily,
-                        fontSize = 12.sp,
-                        lineHeight = 18.sp,
-                        color = colors.textSecondary,
-                        modifier = Modifier.testTag("tv_legal_terms_body")
-                    )
+                    LegalSubpageTab.TERMS -> {
+                        Text(
+                            text = "Terms of Service — Meridian11 LLC",
+                            fontFamily = AwakeSansFontFamily,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = colors.textPrimary
+                        )
+                        Text(
+                            text = "Effective Date: November 11, 2026 • Owner: Meridian11 LLC",
+                            fontFamily = AwakeSansFontFamily,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp,
+                            color = colors.textSecondary
+                        )
+                        Text(
+                            text = "1. License\n" +
+                                "Awake is owned by Meridian11 LLC. You may use it on your compatible Googlebook devices under a personal, non-exclusive, non-transferable license.\n\n" +
+                                "2. Battery and heat\n" +
+                                "Keeping a screen and processor awake uses battery and generates heat. We recommend keeping 'Backpack Safety' and 'Battery Guard' turned on. You are responsible for your device's battery, temperature, and screen.\n\n" +
+                                "3. No warranty\n" +
+                                "THE APPLICATION IS PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY LAW, MERIDIAN11 LLC SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR HARDWARE DAMAGES ARISING OUT OF YOUR USE OF THE APPLICATION.\n\n" +
+                                "Questions: meridian11labs@gmail.com",
+                            fontFamily = AwakeSansFontFamily,
+                            fontSize = 12.sp,
+                            lineHeight = 18.sp,
+                            color = colors.textSecondary,
+                            modifier = Modifier.testTag("tv_legal_terms_body")
+                        )
+                    }
                 }
             }
         }

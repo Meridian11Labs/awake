@@ -66,7 +66,7 @@ jobs:
           # Gradle's 512 MB default.
           mkdir -p ~/.gradle
           echo "org.gradle.jvmargs=-Xmx4g -XX:+UseParallelGC -Dfile.encoding=UTF-8" >> ~/.gradle/gradle.properties
-          ./gradlew :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease --no-daemon --console=plain
+          ./gradlew :app:lintRelease :app:testDebugUnitTest :app:assembleRelease :app:bundleRelease --no-daemon --console=plain
 
       - name: Check the certificate
         run: |

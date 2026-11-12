@@ -7,6 +7,9 @@ import android.os.PowerManager
  * Acquires and releases CPU (`PARTIAL_WAKE_LOCK`) and Display
  * (`SCREEN_BRIGHT_WAKE_LOCK` or `SCREEN_DIM_WAKE_LOCK`) wake locks with
  * bounded safety timeouts so a force-killed process never leaks an infinite lock.
+ *
+ * Renewals extend held non-reference-counted locks in-place without releasing first,
+ * preventing dimmed displays from pulsing bright or brief suspend windows during switches.
  */
 class WakeLockEngine(context: Context) {
 
@@ -22,18 +25,8 @@ class WakeLockEngine(context: Context) {
         allowScreenDimming: Boolean,
         timeoutMillis: Long = DEFAULT_SAFETY_TIMEOUT_MS
     ) {
-        release()
-
         val pm = powerManager ?: return
-
-        val cpuLock = pm.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK,
-            CPU_WAKELOCK_TAG
-        ).apply {
-            setReferenceCounted(false)
-            acquire(timeoutMillis)
-        }
-        cpuWakeLock = cpuLock
+        val boundedTimeout = timeoutMillis.coerceAtLeast(MIN_TIMEOUT_MS)
 
         @Suppress("DEPRECATION")
         val screenFlags = if (allowScreenDimming) {
@@ -41,41 +34,66 @@ class WakeLockEngine(context: Context) {
         } else {
             PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ON_AFTER_RELEASE
         }
-        lastAcquiredScreenWakeLockFlags = screenFlags
 
-        val displayLock = pm.newWakeLock(
-            screenFlags,
-            SCREEN_WAKELOCK_TAG
+        val existingCpu = cpuWakeLock
+        val existingScreen = screenWakeLock
+        if (existingCpu != null &&
+            existingScreen != null &&
+            lastAcquiredScreenWakeLockFlags == screenFlags
+        ) {
+            existingCpu.acquire(boundedTimeout)
+            existingScreen.acquire(boundedTimeout)
+            return
+        }
+
+        val newCpuLock = pm.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            CPU_WAKELOCK_TAG
         ).apply {
             setReferenceCounted(false)
-            acquire(timeoutMillis)
+            acquire(boundedTimeout)
         }
-        screenWakeLock = displayLock
+
+        val newDisplayLock = try {
+            pm.newWakeLock(
+                screenFlags,
+                SCREEN_WAKELOCK_TAG
+            ).apply {
+                setReferenceCounted(false)
+                acquire(boundedTimeout)
+            }
+        } catch (t: Throwable) {
+            runCatching { if (newCpuLock.isHeld) newCpuLock.release() }
+            throw t
+        }
+
+        releaseQuietly(existingCpu)
+        releaseQuietly(existingScreen)
+
+        cpuWakeLock = newCpuLock
+        screenWakeLock = newDisplayLock
+        lastAcquiredScreenWakeLockFlags = screenFlags
     }
 
     @Synchronized
     fun isHeld(): Boolean {
-        return (cpuWakeLock?.isHeld == true) || (screenWakeLock?.isHeld == true)
+        return (cpuWakeLock?.isHeld == true) && (screenWakeLock?.isHeld == true)
     }
 
     @Synchronized
     fun release() {
-        try {
-            cpuWakeLock?.let {
-                if (it.isHeld) it.release()
-            }
-        } catch (_: Throwable) {
-        } finally {
-            cpuWakeLock = null
-        }
+        releaseQuietly(cpuWakeLock)
+        cpuWakeLock = null
+        releaseQuietly(screenWakeLock)
+        screenWakeLock = null
+    }
 
+    private fun releaseQuietly(lock: PowerManager.WakeLock?) {
         try {
-            screenWakeLock?.let {
-                if (it.isHeld) it.release()
+            if (lock != null && lock.isHeld) {
+                lock.release()
             }
         } catch (_: Throwable) {
-        } finally {
-            screenWakeLock = null
         }
     }
 
@@ -83,5 +101,6 @@ class WakeLockEngine(context: Context) {
         const val CPU_WAKELOCK_TAG = "com.meridian11.books.awake:CpuKeepAwake"
         const val SCREEN_WAKELOCK_TAG = "com.meridian11.books.awake:ScreenKeepAwake"
         const val DEFAULT_SAFETY_TIMEOUT_MS = 12L * 60L * 60L * 1000L // 12 hours safety cap
+        private const val MIN_TIMEOUT_MS = 1_000L
     }
 }

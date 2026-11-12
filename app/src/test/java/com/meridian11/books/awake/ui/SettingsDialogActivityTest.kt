@@ -3,7 +3,10 @@ package com.meridian11.books.awake.ui
 import android.Manifest
 import android.content.Intent
 import android.service.quicksettings.TileService
+import android.view.KeyEvent
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -29,9 +32,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.Shadows.shadowOf
-import org.robolectric.shadows.ShadowAlertDialog
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -57,7 +59,7 @@ class SettingsDialogActivityTest {
     }
 
     @Test
-    fun `toggling master Awake switch and guardrail switches in Compose SettingsDialogActivity updates repository and keeps full app non-blurred`() =
+    fun `toggling master Awake switch and guardrail switches in Compose SettingsDialogActivity updates repository, exposes ToggleableState, and keeps full app non-blurred`() =
         runTest(UnconfinedTestDispatcher()) {
             app.configureDependencies(
                 repository = repository,
@@ -74,15 +76,18 @@ class SettingsDialogActivityTest {
             assertFalse("Full app SettingsDialogActivity must NOT have glass blur", activity.isGlassBlurConfigured)
 
             composeRule.onNodeWithTag("coffee_cup_hero", useUnmergedTree = true).assertIsDisplayed()
+            composeRule.onNodeWithTag("switch_master_awake").assertIsOff()
             assertFalse(repository.stateFlow.first().isAwake)
 
             composeRule.onNodeWithTag("switch_master_awake").performClick()
             composeRule.waitForIdle()
+            composeRule.onNodeWithTag("switch_master_awake").assertIsOn()
             assertTrue(repository.stateFlow.first().isAwake)
             assertEquals(true, iconPort.lastIsFullCup)
 
-            composeRule.onNodeWithTag("switch_allow_dimming").performScrollTo().performClick()
+            composeRule.onNodeWithTag("switch_allow_dimming").performScrollTo().assertIsOff().performClick()
             composeRule.waitForIdle()
+            composeRule.onNodeWithTag("switch_allow_dimming").assertIsOn()
             assertTrue(repository.stateFlow.first().allowScreenDimming)
         }
 
@@ -149,7 +154,7 @@ class SettingsDialogActivityTest {
         }
 
     @Test
-    fun `subtle footer links open About, Privacy Policy, and Terms of Service subpage with Meridian11 LLC ownership`() =
+    fun `subtle footer links open About, Privacy Policy, and Terms of Service subpage and Escape returns to main window before closing`() =
         runTest(UnconfinedTestDispatcher()) {
             app.configureDependencies(
                 repository = repository,
@@ -159,7 +164,7 @@ class SettingsDialogActivityTest {
                 scope = backgroundScope
             )
 
-            Robolectric.buildActivity(SettingsDialogActivity::class.java)
+            val activity = Robolectric.buildActivity(SettingsDialogActivity::class.java)
                 .setup()
                 .get()
 
@@ -185,9 +190,14 @@ class SettingsDialogActivityTest {
             composeRule.waitForIdle()
             composeRule.onNodeWithTag("tv_legal_terms_body", useUnmergedTree = true).assertIsDisplayed()
 
-            // Return to main Settings window
-            composeRule.onNodeWithTag("btn_legal_back").performClick()
+            // Pressing Escape on Googlebook keyboard must return to main Settings screen (NOT close the window)
+            activity.onKeyDown(KeyEvent.KEYCODE_ESCAPE, KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ESCAPE))
             composeRule.waitForIdle()
+            assertFalse("Escape from legal subpage must return to main screen without closing window", activity.isFinishing)
             composeRule.onNodeWithTag("coffee_cup_hero", useUnmergedTree = true).assertIsDisplayed()
+
+            // Pressing Escape again on the main Settings screen closes the window
+            activity.onKeyDown(KeyEvent.KEYCODE_ESCAPE, KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_ESCAPE))
+            assertTrue("Escape on root Settings screen must close the window", activity.isFinishing)
         }
 }

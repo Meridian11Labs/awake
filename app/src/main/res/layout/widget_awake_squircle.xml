@@ -1,26 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget_root"
+    android:id="@+id/widget_squircle_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="4dp">
+    android:background="@drawable/bg_widget_squircle_empty"
+    android:padding="10dp">
 
-    <FrameLayout
-        android:id="@+id/widget_squircle_container"
+    <ImageView
+        android:id="@+id/img_widget_cup"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
-        android:background="@drawable/bg_widget_squircle_empty"
-        android:padding="6dp">
-
-        <ImageView
-            android:id="@+id/img_widget_cup"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:contentDescription="@string/app_name"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_widget_cup_empty" />
-    </FrameLayout>
+        android:contentDescription="@string/app_name"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_widget_cup_empty" />
 
 </FrameLayout>

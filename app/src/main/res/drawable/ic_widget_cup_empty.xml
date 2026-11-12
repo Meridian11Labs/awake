@@ -5,31 +5,38 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Saucer Pill Base (Material Design Single-Tone Blue Inactive Widget Icon) -->
-    <path
-        android:pathData="M29,81 H71"
-        android:strokeWidth="5.0"
-        android:strokeColor="@color/cup_stroke_empty"
-        android:strokeLineCap="round" />
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="1.36"
+        android:scaleY="1.36">
 
-    <!-- Geometric D-Handle -->
-    <path
-        android:pathData="M68,49 H73 C77.42,49 81,52.13 81,56 C81,59.87 77.42,63 73,63 H68"
-        android:strokeWidth="5.0"
-        android:strokeColor="@color/cup_stroke_empty"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
+        <!-- Saucer Pill Base (Material Design Single-Tone Blue Inactive Widget Icon) -->
+        <path
+            android:pathData="M29,81 H71"
+            android:strokeWidth="5.0"
+            android:strokeColor="@color/cup_stroke_empty"
+            android:strokeLineCap="round" />
 
-    <!-- Lower 50% Solid Fill (y=59..74) -->
-    <path
-        android:fillColor="@color/cup_stroke_empty"
-        android:pathData="M32,59 H68 V60 C68,67.73 61.73,74 54,74 H46 C38.27,74 32,67.73 32,60 Z" />
+        <!-- Geometric D-Handle -->
+        <path
+            android:pathData="M68,49 H73 C77.42,49 81,52.13 81,56 C81,59.87 77.42,63 73,63 H68"
+            android:strokeWidth="5.0"
+            android:strokeColor="@color/cup_stroke_empty"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
 
-    <!-- Cup Vessel Outline (Upper half y=44..59 is open) -->
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M32,44 H68 V60 C68,67.73 61.73,74 54,74 H46 C38.27,74 32,67.73 32,60 Z"
-        android:strokeWidth="5.0"
-        android:strokeColor="@color/cup_stroke_empty"
-        android:strokeLineJoin="round" />
+        <!-- Lower 50% Solid Fill (y=59..74) -->
+        <path
+            android:fillColor="@color/cup_stroke_empty"
+            android:pathData="M32,59 H68 V60 C68,67.73 61.73,74 54,74 H46 C38.27,74 32,67.73 32,60 Z" />
+
+        <!-- Cup Vessel Outline (Upper half y=44..59 is open) -->
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M32,44 H68 V60 C68,67.73 61.73,74 54,74 H46 C38.27,74 32,67.73 32,60 Z"
+            android:strokeWidth="5.0"
+            android:strokeColor="@color/cup_stroke_empty"
+            android:strokeLineJoin="round" />
+    </group>
 </vector>

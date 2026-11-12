@@ -6,9 +6,9 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.util.SizeF
+import android.view.View
 import android.widget.RemoteViews
 import androidx.annotation.DrawableRes
 import androidx.annotation.LayoutRes
@@ -16,13 +16,16 @@ import androidx.core.content.ContextCompat
 import com.meridian11.books.awake.AwakeApp
 import com.meridian11.books.awake.R
 import com.meridian11.books.awake.domain.AwakeState
+import com.meridian11.books.awake.platform.AndroidShortcutPublisher
 import com.meridian11.books.awake.ui.SettingsDialogActivity
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Responsive Material 3 Expressive Coffee Cup Widget (`1x1` default squircle, resizable to `2x1` and `Expanded`).
  * - Default `1x1` (`COMPACT_1X1`): Full-bleed squircle coffee cup button (Half-Empty Pastel Blue when inactive, Filled Pastel Orange when active).
- * - Medium `2x1` (`MEDIUM_2X1`): Horizontal hero banner with coffee cup badge, Awake/Sleeping status, interactive Duration Cycle Pill (`Infinite | 30m | 1h | 2h`), and Settings button.
+ * - Medium `2x1` (`MEDIUM_2X1`): Horizontal hero banner with coffee cup badge, Awake/Sleeping status + live countdown chronometer, interactive Duration Cycle Pill (`Infinite | 30m | 1h | 2h`), and Settings button.
  * - Expanded (`EXPANDED`, `2x2+` / `3x2+`): Elevated Material 3 card with Hero Toggle Row, 4-button Segmented Duration Pills (`Infinite | 30m | 1h | 2h`), and Settings launch button.
  */
 class AwakeSquircleWidgetProvider : AppWidgetProvider() {
@@ -45,14 +48,19 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        val app = context.applicationContext as AwakeApp
+        val app = context.applicationContext as? AwakeApp ?: return
         val pendingResult = goAsync()
         app.appScope.launch {
             try {
-                val state = app.controller.syncCurrentState()
-                for (widgetId in appWidgetIds) {
-                    val options = appWidgetManager.getAppWidgetOptions(widgetId)
-                    appWidgetManager.updateAppWidget(widgetId, buildResponsiveRemoteViews(context, state, options))
+                withTimeoutOrNull(WIDGET_UPDATE_TIMEOUT_MS) {
+                    val state = app.repository.stateFlow.first()
+                    for (widgetId in appWidgetIds) {
+                        val options = appWidgetManager.getAppWidgetOptions(widgetId)
+                        appWidgetManager.updateAppWidget(
+                            widgetId,
+                            buildResponsiveRemoteViews(context, state, options)
+                        )
+                    }
                 }
             } finally {
                 pendingResult?.finish()
@@ -67,58 +75,19 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
         newOptions: Bundle
     ) {
         super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
-        val app = context.applicationContext as AwakeApp
+        val app = context.applicationContext as? AwakeApp ?: return
         val pendingResult = goAsync()
         app.appScope.launch {
             try {
-                val state = app.controller.syncCurrentState()
-                appWidgetManager.updateAppWidget(
-                    appWidgetId,
-                    buildResponsiveRemoteViews(context, state, newOptions)
-                )
+                withTimeoutOrNull(WIDGET_UPDATE_TIMEOUT_MS) {
+                    val state = app.repository.stateFlow.first()
+                    appWidgetManager.updateAppWidget(
+                        appWidgetId,
+                        buildResponsiveRemoteViews(context, state, newOptions)
+                    )
+                }
             } finally {
                 pendingResult?.finish()
-            }
-        }
-    }
-
-    override fun onReceive(context: Context, intent: Intent) {
-        super.onReceive(context, intent)
-        val app = context.applicationContext as AwakeApp
-        when (intent.action) {
-            ACTION_WIDGET_TOGGLE -> {
-                val pendingResult = goAsync()
-                app.appScope.launch {
-                    try {
-                        val updated = app.controller.toggle()
-                        updateAllWidgets(context, updated)
-                    } finally {
-                        pendingResult?.finish()
-                    }
-                }
-            }
-            ACTION_WIDGET_CYCLE_DURATION -> {
-                val pendingResult = goAsync()
-                app.appScope.launch {
-                    try {
-                        val updated = app.controller.cycleDurationPresetAndApply()
-                        updateAllWidgets(context, updated)
-                    } finally {
-                        pendingResult?.finish()
-                    }
-                }
-            }
-            ACTION_WIDGET_SET_DURATION -> {
-                val minutes = intent.getIntExtra(EXTRA_DURATION_MINUTES, 0)
-                val pendingResult = goAsync()
-                app.appScope.launch {
-                    try {
-                        val updated = app.controller.enableWithDuration(minutes)
-                        updateAllWidgets(context, updated)
-                    } finally {
-                        pendingResult?.finish()
-                    }
-                }
             }
         }
     }
@@ -128,9 +97,12 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
         const val ACTION_WIDGET_CYCLE_DURATION = "com.meridian11.books.awake.action.WIDGET_CYCLE_DURATION"
         const val ACTION_WIDGET_SET_DURATION = "com.meridian11.books.awake.action.WIDGET_SET_DURATION"
         const val EXTRA_DURATION_MINUTES = "extra_duration_minutes"
+        const val EXTRA_TARGET_AWAKE = "extra_target_awake"
 
-        private const val REQUEST_CODE_TOGGLE = 401
+        private const val WIDGET_UPDATE_TIMEOUT_MS = 8_000L
+        private const val REQUEST_CODE_TOGGLE_ON = 401
         private const val REQUEST_CODE_OPEN_SETTINGS = 402
+        private const val REQUEST_CODE_TOGGLE_OFF = 403
         private const val REQUEST_CODE_CYCLE_DURATION = 404
         private const val REQUEST_CODE_DURATION_BASE = 410
 
@@ -154,8 +126,8 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
 
         fun resolveWidgetSizeBucket(widthDp: Int, heightDp: Int): WidgetSizeBucket {
             return when {
-                heightDp >= 135 && widthDp >= 130 -> WidgetSizeBucket.EXPANDED
-                widthDp >= 130 -> WidgetSizeBucket.MEDIUM_2X1
+                widthDp >= 200 && heightDp >= 184 -> WidgetSizeBucket.EXPANDED
+                widthDp >= 180 && heightDp >= 56 -> WidgetSizeBucket.MEDIUM_2X1
                 else -> WidgetSizeBucket.COMPACT_1X1
             }
         }
@@ -163,7 +135,7 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
         fun updateAllWidgets(context: Context, state: AwakeState) {
             val manager = AppWidgetManager.getInstance(context) ?: return
             val component = ComponentName(context, AwakeSquircleWidgetProvider::class.java)
-            val ids = manager.getAppWidgetIds(component)
+            val ids = runCatching { manager.getAppWidgetIds(component) }.getOrNull()
             if (ids != null && ids.isNotEmpty()) {
                 for (widgetId in ids) {
                     val options = manager.getAppWidgetOptions(widgetId)
@@ -175,29 +147,19 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
         internal fun buildResponsiveRemoteViews(
             context: Context,
             state: AwakeState,
-            options: Bundle?
+            @Suppress("UNUSED_PARAMETER") options: Bundle?
         ): RemoteViews {
             val compactViews = buildBucketRemoteViews(context, state, WidgetSizeBucket.COMPACT_1X1)
             val mediumViews = buildBucketRemoteViews(context, state, WidgetSizeBucket.MEDIUM_2X1)
             val expandedViews = buildBucketRemoteViews(context, state, WidgetSizeBucket.EXPANDED)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                return RemoteViews(
-                    mapOf(
-                        SizeF(28f, 28f) to compactViews,
-                        SizeF(130f, 28f) to mediumViews,
-                        SizeF(130f, 135f) to expandedViews
-                    )
+            return RemoteViews(
+                mapOf(
+                    SizeF(28f, 28f) to compactViews,
+                    SizeF(180f, 56f) to mediumViews,
+                    SizeF(200f, 184f) to expandedViews
                 )
-            }
-
-            val widthDp = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
-            val heightDp = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0) ?: 0
-            return when (resolveWidgetSizeBucket(widthDp, heightDp)) {
-                WidgetSizeBucket.COMPACT_1X1 -> compactViews
-                WidgetSizeBucket.MEDIUM_2X1 -> mediumViews
-                WidgetSizeBucket.EXPANDED -> expandedViews
-            }
+            )
         }
 
         internal fun buildBucketRemoteViews(
@@ -207,49 +169,64 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
         ): RemoteViews {
             val spec = resolveVisualSpec(state)
             val views = RemoteViews(context.packageName, bucket.layoutRes)
+            val togglePendingIntent = createTogglePendingIntent(
+                context = context,
+                targetAwake = !state.isAwake
+            )
 
             // Primary Coffee Cup + Squircle Hero Container
             views.setImageViewResource(R.id.img_widget_cup, spec.cupIconRes)
             views.setContentDescription(R.id.img_widget_cup, spec.contentDescription)
             views.setInt(R.id.widget_squircle_container, "setBackgroundResource", spec.backgroundRes)
-            views.setOnClickPendingIntent(R.id.widget_squircle_container, createTogglePendingIntent(context))
+            views.setOnClickPendingIntent(R.id.widget_squircle_container, togglePendingIntent)
 
             when (bucket) {
                 WidgetSizeBucket.COMPACT_1X1 -> {
-                    views.setOnClickPendingIntent(R.id.widget_root, createTogglePendingIntent(context))
+                    // Flattened root IS widget_squircle_container in COMPACT_1X1
                 }
                 WidgetSizeBucket.MEDIUM_2X1 -> {
                     views.setInt(R.id.widget_cup_badge, "setBackgroundResource", spec.badgeBackgroundRes)
                     views.setTextViewText(
                         R.id.txt_widget_title,
-                        if (state.isAwake) "Awake" else "Asleep"
+                        context.getString(
+                            if (state.isAwake) R.string.widget_title_awake_short else R.string.widget_title_asleep_short
+                        )
                     )
-                    views.setTextViewText(
-                        R.id.txt_widget_subtitle,
-                        if (state.isAwake) "Active" else "Normal"
+                    bindSubtitleOrChronometer(
+                        context = context,
+                        views = views,
+                        state = state,
+                        fallbackSubtitle = context.getString(
+                            if (state.isAwake) R.string.widget_subtitle_active_short else R.string.widget_subtitle_normal_short
+                        )
                     )
+
                     val durChipText = when (state.durationMinutes) {
-                        0 -> "∞"
-                        30 -> "30m"
-                        60 -> "1h"
-                        120 -> "2h"
-                        else -> "${state.durationMinutes}m"
+                        0 -> context.getString(R.string.widget_duration_infinity_symbol)
+                        60 -> context.getString(R.string.widget_duration_1h)
+                        120 -> context.getString(R.string.widget_duration_2h)
+                        else -> context.getString(R.string.widget_duration_minutes_format, state.durationMinutes)
                     }
                     views.setTextViewText(R.id.btn_widget_cycle_duration, durChipText)
                     views.setInt(
                         R.id.btn_widget_cycle_duration,
                         "setBackgroundResource",
-                        if (state.isAwake) R.drawable.bg_chip_selected else R.drawable.bg_segmented_track
+                        if (state.isAwake) R.drawable.bg_chip_accent else R.drawable.bg_segmented_track
                     )
                     views.setTextColor(
                         R.id.btn_widget_cycle_duration,
                         ContextCompat.getColor(
                             context,
-                            if (state.isAwake) R.color.chip_selected_text else R.color.chip_unselected_text
+                            if (state.isAwake) R.color.chip_accent_text else R.color.chip_unselected_text
                         )
                     )
+                    val cycleContentDesc = context.getString(
+                        R.string.widget_cd_cycle_duration,
+                        AndroidShortcutPublisher.formatDurationLong(state.durationMinutes)
+                    )
+                    views.setContentDescription(R.id.btn_widget_cycle_duration_hit, cycleContentDesc)
                     views.setOnClickPendingIntent(
-                        R.id.btn_widget_cycle_duration,
+                        R.id.btn_widget_cycle_duration_hit,
                         createCycleDurationPendingIntent(context)
                     )
                     views.setOnClickPendingIntent(
@@ -261,26 +238,30 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
                     views.setInt(R.id.widget_cup_badge, "setBackgroundResource", spec.badgeBackgroundRes)
                     views.setTextViewText(
                         R.id.txt_widget_title,
-                        if (state.isAwake) "Keeping Awake" else "Normal Sleep"
+                        context.getString(
+                            if (state.isAwake) R.string.widget_title_keeping_awake else R.string.widget_title_normal_sleep
+                        )
                     )
-                    views.setTextViewText(
-                        R.id.txt_widget_subtitle,
-                        formatSubtitle(state)
+                    bindSubtitleOrChronometer(
+                        context = context,
+                        views = views,
+                        state = state,
+                        fallbackSubtitle = formatExpandedSubtitle(context, state)
                     )
                     views.setTextViewText(
                         R.id.txt_widget_state_pill,
-                        if (state.isAwake) "ON" else "OFF"
+                        context.getString(if (state.isAwake) R.string.widget_pill_on else R.string.widget_pill_off)
                     )
                     views.setInt(
                         R.id.txt_widget_state_pill,
                         "setBackgroundResource",
-                        if (state.isAwake) R.drawable.bg_chip_selected else R.drawable.bg_segmented_track
+                        if (state.isAwake) R.drawable.bg_chip_accent else R.drawable.bg_segmented_track
                     )
                     views.setTextColor(
                         R.id.txt_widget_state_pill,
                         ContextCompat.getColor(
                             context,
-                            if (state.isAwake) R.color.chip_selected_text else R.color.chip_unselected_text
+                            if (state.isAwake) R.color.chip_accent_text else R.color.chip_unselected_text
                         )
                     )
 
@@ -302,6 +283,13 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
                             if (isSelected) R.drawable.bg_chip_selected else R.drawable.bg_chip_unselected
                         )
                         views.setTextColor(viewId, if (isSelected) selectedTextColor else unselectedTextColor)
+                        views.setContentDescription(
+                            viewId,
+                            context.getString(
+                                if (isSelected) R.string.widget_cd_preset_selected else R.string.widget_cd_preset_unselected,
+                                AndroidShortcutPublisher.formatDurationLong(minutes)
+                            )
+                        )
                         views.setOnClickPendingIntent(
                             viewId,
                             createDurationPendingIntent(context, minutes)
@@ -318,29 +306,55 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
             return views
         }
 
-        private fun formatSubtitle(state: AwakeState): String {
-            return if (state.isAwake) {
-                if (state.durationMinutes == 0) "Infinite" else "${state.durationMinutes}m timer"
+        private fun bindSubtitleOrChronometer(
+            context: Context,
+            views: RemoteViews,
+            state: AwakeState,
+            fallbackSubtitle: String
+        ) {
+            if (state.isAwake && state.sessionExpiresAtEpochMillis > 0L) {
+                views.setViewVisibility(R.id.txt_widget_subtitle, View.GONE)
+                views.setViewVisibility(R.id.chrono_widget_remaining, View.VISIBLE)
+                views.setChronometerCountDown(R.id.chrono_widget_remaining, true)
+                views.setChronometer(
+                    R.id.chrono_widget_remaining,
+                    state.sessionExpiresAtEpochMillis,
+                    context.getString(R.string.widget_chrono_format),
+                    true
+                )
             } else {
-                val preset = if (state.durationMinutes == 0) "Infinite" else "${state.durationMinutes}m"
-                "Tap to activate ($preset preset)"
+                views.setChronometer(R.id.chrono_widget_remaining, 0L, null, false)
+                views.setViewVisibility(R.id.chrono_widget_remaining, View.GONE)
+                views.setViewVisibility(R.id.txt_widget_subtitle, View.VISIBLE)
+                views.setTextViewText(R.id.txt_widget_subtitle, fallbackSubtitle)
             }
         }
 
-        private fun createTogglePendingIntent(context: Context): PendingIntent {
-            val toggleIntent = Intent(context, AwakeSquircleWidgetProvider::class.java).apply {
-                action = ACTION_WIDGET_TOGGLE
+        private fun formatExpandedSubtitle(context: Context, state: AwakeState): String {
+            return if (state.isAwake) {
+                AndroidShortcutPublisher.formatTimerSubtitle(state.durationMinutes)
+            } else {
+                val preset = AndroidShortcutPublisher.formatDurationShort(state.durationMinutes)
+                context.getString(R.string.widget_subtitle_tap_preset, preset)
             }
+        }
+
+        private fun createTogglePendingIntent(context: Context, targetAwake: Boolean): PendingIntent {
+            val toggleIntent = Intent(context, AwakeWidgetActionReceiver::class.java).apply {
+                action = ACTION_WIDGET_TOGGLE
+                putExtra(EXTRA_TARGET_AWAKE, targetAwake)
+            }
+            val requestCode = if (targetAwake) REQUEST_CODE_TOGGLE_ON else REQUEST_CODE_TOGGLE_OFF
             return PendingIntent.getBroadcast(
                 context,
-                REQUEST_CODE_TOGGLE,
+                requestCode,
                 toggleIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         }
 
         private fun createCycleDurationPendingIntent(context: Context): PendingIntent {
-            val intent = Intent(context, AwakeSquircleWidgetProvider::class.java).apply {
+            val intent = Intent(context, AwakeWidgetActionReceiver::class.java).apply {
                 action = ACTION_WIDGET_CYCLE_DURATION
             }
             return PendingIntent.getBroadcast(
@@ -352,7 +366,7 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
         }
 
         private fun createDurationPendingIntent(context: Context, minutes: Int): PendingIntent {
-            val intent = Intent(context, AwakeSquircleWidgetProvider::class.java).apply {
+            val intent = Intent(context, AwakeWidgetActionReceiver::class.java).apply {
                 action = ACTION_WIDGET_SET_DURATION
                 putExtra(EXTRA_DURATION_MINUTES, minutes)
             }
@@ -366,7 +380,10 @@ class AwakeSquircleWidgetProvider : AppWidgetProvider() {
 
         private fun createOpenSettingsPendingIntent(context: Context): PendingIntent {
             val intent = Intent(context, SettingsDialogActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                action = AndroidShortcutPublisher.ACTION_OPEN_SETTINGS
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
             }
             return PendingIntent.getActivity(
                 context,

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -7,7 +8,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <!-- Large-Screen / Googlebook / Chromebook compatibility: do not require a touchscreen -->
+    <!-- Large-Screen / Googlebook compatibility: do not require a touchscreen -->
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false" />
@@ -21,17 +22,20 @@
 
     <application
         android:name=".AwakeApp"
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="33"
         android:icon="@mipmap/ic_launcher_empty"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_empty"
         android:supportsRtl="true">
 
-        <!-- Target zero-UI trampoline activity (routes to window by default or direct toggle when configured) -->
+        <!-- Target zero-UI trampoline activity (invoked through exported EmptyCupAlias / FullCupAlias) -->
         <activity
             android:name=".ui.ToggleTrampolineActivity"
             android:excludeFromRecents="true"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleInstance"
             android:noHistory="true"
             android:taskAffinity=""
@@ -71,18 +75,17 @@
         <activity
             android:name=".ui.ShortcutActionActivity"
             android:excludeFromRecents="true"
-            android:exported="true"
+            android:exported="false"
             android:launchMode="singleInstance"
             android:noHistory="true"
             android:taskAffinity=""
             android:theme="@style/Theme.Awake.Trampoline" />
 
-        <!-- Adaptive Desktop/Googlebook Control & Settings Window (Opaque, No Blur, handles QS Tile Long-Press) -->
+        <!-- Adaptive Googlebook Control & Settings Window (Opaque, No Blur, handles QS Tile Long-Press) -->
         <activity
             android:name=".ui.SettingsDialogActivity"
             android:exported="true"
-            android:label="@string/app_name"
-            android:launchMode="singleTop"
+            android:launchMode="singleTask"
             android:resizeableActivity="true"
             android:theme="@style/Theme.Awake.SettingsDialog">
             <layout
@@ -92,7 +95,6 @@
                 android:minHeight="500dp"
                 android:minWidth="460dp" />
             <intent-filter>
-                <action android:name="com.meridian11.books.awake.action.OPEN_SETTINGS" />
                 <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
@@ -105,7 +107,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Keeps the Googlebook display and CPU awake while the user toggles the Awake taskbar coffee cup icon ON." />
+                android:value="User-initiated desktop keep-awake power utility for Googlebooks: holds CPU and display wake locks and monitors hardware lid-close and low-battery guardrails across windows while Keep Awake is explicitly toggled ON by the user via the Taskbar icon, Quick Settings tile, or desktop widget." />
         </service>
 
         <!-- Companion Quick Settings Tile in System Tray -->
@@ -130,16 +132,23 @@
             android:label="@string/widget_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="com.meridian11.books.awake.action.WIDGET_TOGGLE" />
-                <action android:name="com.meridian11.books.awake.action.WIDGET_CYCLE_DURATION" />
-                <action android:name="com.meridian11.books.awake.action.WIDGET_SET_DURATION" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/awake_squircle_widget_info" />
         </receiver>
 
-        <!-- Boot and app-update receiver: resets the switch and the icon to off -->
+        <!-- Non-exported internal receiver for Widget PendingIntent clicks -->
+        <receiver
+            android:name=".widget.AwakeWidgetActionReceiver"
+            android:exported="false" />
+
+        <!-- Non-exported internal receiver for AlarmManager timed session expiration -->
+        <receiver
+            android:name=".receiver.SessionExpirationReceiver"
+            android:exported="false" />
+
+        <!-- Boot and app-update receiver: resets to OFF on boot, preserves active sessions across updates -->
         <receiver
             android:name=".receiver.SystemEventReceiver"
             android:exported="true">

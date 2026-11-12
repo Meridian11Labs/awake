@@ -1,41 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Seamless Window & Header Ground (Deep Midnight Blue-Slate) -->
-    <color name="window_bg">#FF0E131A</color>
+    <color name="window_bg">#FF0F172A</color>
 
     <!-- Elevated Card Surfaces & Inner Tonal Segmented Tracks -->
-    <color name="surface_card_bg">#FF171F2C</color>
-    <color name="surface_card_stroke">#FF263244</color>
-    <color name="surface_tonal_bg">#FF111823</color>
+    <color name="surface_card_bg">#FF1E293B</color>
+    <color name="surface_card_stroke">#FF334155</color>
+    <color name="surface_tonal_bg">#FF0F172A</color>
 
-    <!-- Hero Toggle Card: Deep Pastel Navy (Inactive) vs Warm Sunset Orange-Slate (Active) -->
-    <color name="hero_card_inactive_bg">#FF18263C</color>
-    <color name="hero_card_inactive_stroke">#FF2B4266</color>
-    <color name="hero_card_active_bg">#FF362015</color>
-    <color name="hero_card_active_stroke">#FF613824</color>
+    <!-- Hero Toggle Card: Deep Pastel Navy (Inactive) vs Warm Sunset Orange-950 (Active) -->
+    <color name="hero_card_inactive_bg">#FF1E3A5F</color>
+    <color name="hero_card_active_bg">#FF431407</color>
 
-    <!-- Typography & Dividers -->
-    <color name="dialog_surface">#FF171F2C</color>
+    <!-- Typography (High-Contrast Cool Slate — WCAG AA >= 5.6:1 on all surfaces) -->
     <color name="dialog_text_primary">#FFF1F5F9</color>
-    <color name="dialog_text_secondary">#FF94A3B8</color>
-    <color name="dialog_divider">#FF263244</color>
+    <color name="dialog_text_secondary">#FFCBD5E1</color>
 
     <!-- Segmented Pills & Action Buttons (Pastel Sky Blue) -->
     <color name="chip_selected_bg">#FF60A5FA</color>
     <color name="chip_selected_text">#FF0B2545</color>
-    <color name="chip_unselected_bg">#FF222E40</color>
-    <color name="chip_unselected_text">#FFD8E4F2</color>
+    <color name="chip_unselected_bg">#00000000</color>
+    <color name="chip_unselected_text">#FFE2E8F0</color>
 
-    <!-- Secondary Tonal Action Button -->
-    <color name="chip_accent_bg">#FF3B2316</color>
-    <color name="chip_accent_text">#FFFFB88C</color>
+    <!-- Warm Orange Active Pill Accent inside Active Hero Card (WCAG AAA 8.19:1) -->
+    <color name="chip_accent_bg">#FF7C2D12</color>
+    <color name="chip_accent_text">#FFFFEDD5</color>
 
-    <!-- Material 3 Switch Colors -->
+    <!-- Material 3 Switch Colors (WCAG 1.4.11 >= 3.0:1 UI Contrast) -->
     <color name="switch_track_on">#FF60A5FA</color>
-    <color name="switch_track_off">#FF263244</color>
-    <color name="switch_track_off_stroke">#FF64748B</color>
+    <color name="switch_track_hero_on">#FFFB923C</color>
+    <color name="switch_track_off">#FF334155</color>
+    <color name="switch_track_off_stroke">#FF94A3B8</color>
     <color name="switch_thumb_on">#FF0B2545</color>
-    <color name="switch_thumb_off">#FF94A3B8</color>
+    <color name="switch_thumb_hero_on">#FF431407</color>
+    <color name="switch_thumb_off">#FFCBD5E1</color>
 
     <!-- Material Design Dynamic Themed Icon Colors (System Material You Palette) -->
     <color name="themed_icon_bg">@android:color/system_accent1_800</color>
@@ -44,10 +42,6 @@
     <!-- Coffee Cup Pictogram & Squircle Widget -->
     <color name="cup_badge_empty_bg">#FF1E3A8A</color>
     <color name="cup_badge_full_bg">#FF7C2D12</color>
-    <color name="cup_liquid_empty">#FF60A5FA</color>
-    <color name="cup_liquid_full">#FFFF8C42</color>
     <color name="cup_stroke_empty">#FF93C5FD</color>
     <color name="cup_stroke_full">#FFFFB88C</color>
-    <color name="cup_steam_color">#FFFF9E66</color>
-    <color name="cup_crema_color">#FFFFF7ED</color>
 </resources>

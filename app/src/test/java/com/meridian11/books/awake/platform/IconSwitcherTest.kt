@@ -52,6 +52,11 @@ class IconSwitcherTest {
 
         assertTrue(iconSwitcher.isFullCupAliasEnabled())
         assertEquals(fullAlias, iconSwitcher.getActiveAliasComponent())
+
+        // Duplicate call with identical state must be a zero-IPC no-op
+        recordedTransitions.clear()
+        iconSwitcher.setCoffeeCupIcon(isFullCup = true)
+        assertEquals("Idempotent repeat call must not re-apply PackageManager component writes", 0, recordedTransitions.size)
     }
 
     @Test

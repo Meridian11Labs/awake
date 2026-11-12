@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,5 +59,24 @@ class SystemEventReceiverTest {
 
             assertFalse("Boot must reset awake state to Empty Cup", repository.stateFlow.first().isAwake)
             assertEquals(false, iconPort.lastIsFullCup)
+        }
+
+    @Test
+    fun `ACTION_MY_PACKAGE_REPLACED preserves active Keep-Awake session across app updates`() =
+        runTest(UnconfinedTestDispatcher()) {
+            app.configureDependencies(
+                repository = repository,
+                iconSwitcher = iconPort,
+                shortcutPublisher = shortcutPort,
+                enginePort = enginePort,
+                scope = backgroundScope
+            )
+
+            val receiver = SystemEventReceiver()
+            receiver.onReceive(app, Intent(Intent.ACTION_MY_PACKAGE_REPLACED))
+
+            assertTrue("Package update must preserve an active Keep-Awake session", repository.stateFlow.first().isAwake)
+            assertEquals(true, iconPort.lastIsFullCup)
+            assertTrue("Engine must be restarted after package update when active", enginePort.isRunning)
         }
 }

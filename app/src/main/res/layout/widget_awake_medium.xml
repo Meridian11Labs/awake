@@ -1,106 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/widget_root"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_squircle_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="4dp">
+    android:background="@drawable/bg_widget_squircle_empty"
+    android:baselineAligned="false"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="10dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="6dp"
+    android:paddingBottom="6dp">
 
+    <!-- Tonal Coffee Cup Squircle Badge -->
+    <FrameLayout
+        android:id="@+id/widget_cup_badge"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_widget_cup_badge_empty"
+        android:padding="6dp">
+
+        <ImageView
+            android:id="@+id/img_widget_cup"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/app_name"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_widget_cup_empty" />
+    </FrameLayout>
+
+    <!-- Concise Primary Status & Live Countdown / Mode Subtitle -->
     <LinearLayout
-        android:id="@+id/widget_squircle_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@drawable/bg_widget_squircle_empty"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="8dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="8dp"
-        android:paddingBottom="8dp">
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="4dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-        <!-- Tonal Coffee Cup Squircle Badge -->
-        <FrameLayout
-            android:id="@+id/widget_cup_badge"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/bg_widget_cup_badge_empty"
-            android:padding="4dp">
-
-            <ImageView
-                android:id="@+id/img_widget_cup"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:contentDescription="@string/app_name"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_widget_cup_empty" />
-        </FrameLayout>
-
-        <!-- Concise Primary Status & Mode Subtitle (Never truncates in 2x1) -->
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/txt_widget_title"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginEnd="6dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:ellipsize="end"
+            android:fontFamily="@font/awake_sans"
+            android:maxLines="1"
+            android:text="@string/widget_title_asleep_short"
+            android:textColor="@color/dialog_text_primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/txt_widget_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:fontFamily="@font/awake_sans"
-                android:maxLines="1"
-                android:text="Asleep"
-                android:textColor="@color/dialog_text_primary"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+        <TextView
+            android:id="@+id/txt_widget_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:ellipsize="end"
+            android:fontFamily="@font/awake_sans"
+            android:maxLines="1"
+            android:text="@string/widget_subtitle_normal_short"
+            android:textColor="@color/dialog_text_secondary"
+            android:textSize="11sp" />
 
-            <TextView
-                android:id="@+id/txt_widget_subtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:ellipsize="end"
-                android:fontFamily="@font/awake_sans"
-                android:maxLines="1"
-                android:text="Normal"
-                android:textColor="@color/dialog_text_secondary"
-                android:textSize="11sp" />
-        </LinearLayout>
+        <Chronometer
+            android:id="@+id/chrono_widget_remaining"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:countDown="true"
+            android:ellipsize="end"
+            android:fontFamily="@font/awake_sans"
+            android:maxLines="1"
+            android:textColor="@color/dialog_text_secondary"
+            android:textSize="11sp"
+            android:visibility="gone" />
+    </LinearLayout>
 
-        <!-- Interactive Duration Preset Cycle Pill (∞ -> 30m -> 1h -> 2h) -->
+    <!-- 48dp Accessible Hit Wrapper for Duration Preset Cycle Pill (∞ -> 30m -> 1h -> 2h) -->
+    <FrameLayout
+        android:id="@+id/btn_widget_cycle_duration_hit"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:minWidth="48dp"
+        android:paddingStart="3dp"
+        android:paddingEnd="3dp">
+
         <TextView
             android:id="@+id/btn_widget_cycle_duration"
             android:layout_width="wrap_content"
-            android:layout_height="30dp"
-            android:layout_marginEnd="6dp"
-            android:background="@drawable/bg_chip_selected"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_segmented_track"
             android:fontFamily="@font/awake_sans"
             android:gravity="center"
-            android:minWidth="36dp"
+            android:minWidth="40dp"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:text="1h"
-            android:textColor="@color/chip_selected_text"
+            android:text="@string/widget_duration_1h"
+            android:textColor="@color/chip_unselected_text"
             android:textSize="11sp"
             android:textStyle="bold" />
+    </FrameLayout>
 
-        <!-- Quick Settings Window Launch Button -->
-        <FrameLayout
-            android:id="@+id/btn_widget_open_settings"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+    <!-- 48dp Accessible Hit Target for Settings Window Launch Button -->
+    <FrameLayout
+        android:id="@+id/btn_widget_open_settings"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/shortcut_open_settings_short"
+        android:padding="8dp">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
             android:background="@drawable/bg_segmented_track"
-            android:padding="6dp">
+            android:contentDescription="@null"
+            android:padding="7dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_widget_settings" />
+    </FrameLayout>
 
-            <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:contentDescription="@string/shortcut_settings_short"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_widget_settings" />
-        </FrameLayout>
-
-    </LinearLayout>
-
-</FrameLayout>
+</LinearLayout>

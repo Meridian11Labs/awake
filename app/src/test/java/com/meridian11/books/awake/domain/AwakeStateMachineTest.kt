@@ -1,9 +1,11 @@
 package com.meridian11.books.awake.domain
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -23,7 +25,9 @@ class AwakeStateMachineTest {
     private lateinit var fakeShortcutPort: FakeShortcutPublisherPort
     private lateinit var fakeEnginePort: FakeKeepAwakeEnginePort
     private lateinit var fakeWidgetPort: FakeWidgetUpdaterPort
+    private lateinit var fakeAlarmPort: FakeExpirationAlarmPort
     private var fakeClockMillis: Long = 1_000_000L
+    private var fakeBootCount: Int = 7
 
     @Before
     fun setUp() {
@@ -32,7 +36,9 @@ class AwakeStateMachineTest {
         fakeShortcutPort = FakeShortcutPublisherPort()
         fakeEnginePort = FakeKeepAwakeEnginePort()
         fakeWidgetPort = FakeWidgetUpdaterPort()
+        fakeAlarmPort = FakeExpirationAlarmPort()
         fakeClockMillis = 1_000_000L
+        fakeBootCount = 7
     }
 
     private fun createController(scope: TestScope): AwakeController {
@@ -43,7 +49,9 @@ class AwakeStateMachineTest {
             enginePort = fakeEnginePort,
             externalScope = scope.backgroundScope,
             widgetPort = fakeWidgetPort,
-            clockMillis = { fakeClockMillis }
+            alarmPort = fakeAlarmPort,
+            clockMillis = { fakeClockMillis },
+            bootCountProvider = { fakeBootCount }
         )
     }
 
@@ -94,35 +102,90 @@ class AwakeStateMachineTest {
     }
 
     @Test
-    fun `enabling with finite duration sets expiration and auto-shuts off when timer elapses`() = runTest(StandardTestDispatcher()) {
+    fun `enabling with finite duration sets expiration, schedules alarm, and auto-shuts off when timer elapses`() =
+        runTest(StandardTestDispatcher()) {
+            val controller = createController(this)
+
+            controller.enableWithDuration(durationMinutes = 30)
+            runCurrent()
+
+            val activeState = repository.stateFlow.first()
+            val expectedDeadline = fakeClockMillis + 30 * 60_000L
+            assertTrue(activeState.isAwake)
+            assertEquals(30, activeState.durationMinutes)
+            assertEquals(expectedDeadline, activeState.sessionExpiresAtEpochMillis)
+            assertEquals(expectedDeadline, fakeAlarmPort.scheduledAtElapsedMillis)
+            assertEquals(true, fakeIconPort.lastIsFullCup)
+            assertTrue(fakeEnginePort.isRunning)
+
+            // Advance time by 29 minutes: should still be awake
+            fakeClockMillis += 29 * 60_000L
+            advanceTimeBy(29 * 60_000L)
+            runCurrent()
+            assertTrue(repository.stateFlow.first().isAwake)
+
+            // Advance past the 30th minute: should auto-shutoff to Empty Cup and cancel alarm
+            fakeClockMillis += 2 * 60_000L
+            advanceTimeBy(2 * 60_000L)
+            runCurrent()
+
+            val expiredState = repository.stateFlow.first()
+            assertFalse("Should automatically revert to Empty Cup after 30m", expiredState.isAwake)
+            assertEquals(false, fakeIconPort.lastIsFullCup)
+            assertFalse(fakeEnginePort.isRunning)
+            assertEquals(null, fakeAlarmPort.scheduledAtElapsedMillis)
+        }
+
+    @Test
+    fun `when enginePort blocks foreground service start, controller rolls back DataStore, icon, shortcuts, and widget to OFF`() =
+        runTest {
+            fakeEnginePort.allowStart = false
+            val controller = createController(this)
+
+            val result = controller.enableWithDuration(durationMinutes = 60)
+
+            assertFalse("Blocked FGS start must never leave Phantom Awake state", result.isAwake)
+            assertEquals("User preset duration must still be preserved", 60, result.durationMinutes)
+            assertFalse(repository.stateFlow.first().isAwake)
+            assertEquals(false, fakeIconPort.lastIsFullCup)
+            assertEquals(false, fakeShortcutPort.lastState?.isAwake)
+            assertEquals(false, fakeWidgetPort.lastState?.isAwake)
+            assertEquals(null, fakeAlarmPort.scheduledAtElapsedMillis)
+        }
+
+    @Test
+    fun `syncCurrentState invalidates stale awake state when bootCount changed across reboot`() = runTest {
         val controller = createController(this)
-
-        controller.enableWithDuration(durationMinutes = 30)
-        runCurrent()
-
-        val activeState = repository.stateFlow.first()
-        assertTrue(activeState.isAwake)
-        assertEquals(30, activeState.durationMinutes)
-        assertEquals(fakeClockMillis + 30 * 60_000L, activeState.sessionExpiresAtEpochMillis)
-        assertEquals(true, fakeIconPort.lastIsFullCup)
-        assertTrue(fakeEnginePort.isRunning)
-
-        // Advance time by 29 minutes: should still be awake
-        fakeClockMillis += 29 * 60_000L
-        advanceTimeBy(29 * 60_000L)
-        runCurrent()
+        controller.toggle() // ON during bootCount = 7
         assertTrue(repository.stateFlow.first().isAwake)
 
-        // Advance past the 30th minute: should auto-shutoff to Empty Cup
-        fakeClockMillis += 2 * 60_000L
-        advanceTimeBy(2 * 60_000L)
-        runCurrent()
+        // Simulate reboot to bootCount = 8 before BOOT_COMPLETED ran
+        fakeBootCount = 8
+        val synced = controller.syncCurrentState()
 
-        val expiredState = repository.stateFlow.first()
-        assertFalse("Should automatically revert to Empty Cup after 30m", expiredState.isAwake)
+        assertFalse("Cross-reboot stale session must reset to OFF", synced.isAwake)
         assertEquals(false, fakeIconPort.lastIsFullCup)
         assertFalse(fakeEnginePort.isRunning)
     }
+
+    @Test
+    fun `cancelling caller coroutine mid-transition completes state update without tearing ports`() =
+        runTest(StandardTestDispatcher()) {
+            val controller = createController(this)
+            val callerJob = launch {
+                controller.toggle()
+                throw CancellationException("Simulated Activity destroy")
+            }
+            runCurrent()
+            callerJob.cancel()
+            runCurrent()
+
+            val state = repository.stateFlow.first()
+            assertTrue(state.isAwake)
+            assertEquals(true, fakeIconPort.lastIsFullCup)
+            assertTrue(fakeEnginePort.isRunning)
+            assertEquals(true, fakeWidgetPort.lastState?.isAwake)
+        }
 
     @Test
     fun `onBatteryStateChanged shuts off Keep Awake when unplugged and battery at or below threshold`() = runTest {
@@ -144,7 +207,7 @@ class AwakeStateMachineTest {
     @Test
     fun `onChargerStateChanged auto-enables Full Cup on plug-in and disables on unplug when enabled`() = runTest {
         val controller = createController(this)
-        repository.updateGuardrails(
+        controller.updateGuardrails(
             lowBatteryCutoffEnabled = true,
             autoAwakeOnChargerEnabled = true,
             lidCloseAutoShutoffEnabled = true,
@@ -189,18 +252,24 @@ class AwakeStateMachineTest {
     }
 
     @Test
-    fun `extendSession from Indefinite mode updates durationMinutes and sets expiration`() = runTest {
-        val controller = createController(this)
-        controller.toggle() // ON with durationMinutes = 0 (Indefinite)
-        assertEquals(0, repository.stateFlow.first().durationMinutes)
+    fun `extendSession keeps Infinite mode Infinite and extends finite sessions without overwriting saved durationMinutes preset`() =
+        runTest {
+            val controller = createController(this)
 
-        val extended = controller.extendSession(additionalMinutes = 30)
+            // 1. Infinite mode (durationMinutes = 0): +30m must NOT downgrade Infinite into a 30m timer
+            controller.toggle()
+            val infiniteExtended = controller.extendSession(additionalMinutes = 30)
+            assertTrue(infiniteExtended.isAwake)
+            assertEquals(0, infiniteExtended.durationMinutes)
+            assertEquals(0L, infiniteExtended.sessionExpiresAtEpochMillis)
 
-        assertTrue(extended.isAwake)
-        assertEquals(30, extended.durationMinutes)
-        assertEquals(fakeClockMillis + 30 * 60_000L, extended.sessionExpiresAtEpochMillis)
-        assertEquals(30, fakeShortcutPort.lastState?.durationMinutes)
-    }
+            // 2. Finite 60m session: +30m extends deadline to +90m while preserving 60m preset
+            controller.enableWithDuration(durationMinutes = 60)
+            val extended = controller.extendSession(additionalMinutes = 30)
+            assertTrue(extended.isAwake)
+            assertEquals("Saved 60m preset must not be overwritten by +30m extension", 60, extended.durationMinutes)
+            assertEquals(fakeClockMillis + 90 * 60_000L, extended.sessionExpiresAtEpochMillis)
+        }
 }
 
 class FakeIconSwitcherPort : IconSwitcherPort {
@@ -224,12 +293,18 @@ class FakeShortcutPublisherPort : ShortcutPublisherPort {
 }
 
 class FakeKeepAwakeEnginePort : KeepAwakeEnginePort {
+    var allowStart: Boolean = true
     var isRunning: Boolean = false
     var lastState: AwakeState? = null
 
-    override fun startOrUpdateKeepAwake(state: AwakeState) {
+    override fun startOrUpdateKeepAwake(state: AwakeState): Boolean {
+        if (!allowStart) {
+            isRunning = false
+            return false
+        }
         isRunning = true
         lastState = state
+        return true
     }
 
     override fun stopKeepAwake() {
@@ -242,5 +317,17 @@ class FakeWidgetUpdaterPort : WidgetUpdaterPort {
 
     override fun updateWidgets(state: AwakeState) {
         lastState = state
+    }
+}
+
+class FakeExpirationAlarmPort : ExpirationAlarmPort {
+    var scheduledAtElapsedMillis: Long? = null
+
+    override fun scheduleExpirationAlarm(triggerAtElapsedMillis: Long) {
+        scheduledAtElapsedMillis = triggerAtElapsedMillis
+    }
+
+    override fun cancelExpirationAlarm() {
+        scheduledAtElapsedMillis = null
     }
 }

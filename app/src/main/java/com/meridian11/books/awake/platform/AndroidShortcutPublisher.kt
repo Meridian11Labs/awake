@@ -21,19 +21,41 @@ class AndroidShortcutPublisher(
     private val iconSwitcher: AndroidIconSwitcher
 ) : ShortcutPublisherPort {
 
+    private data class PublishedShortcutKey(
+        val activeAlias: ComponentName,
+        val isAwake: Boolean,
+        val durationMinutes: Int
+    )
+
+    @Volatile
+    private var lastPublishedKey: PublishedShortcutKey? = null
+
     override fun publishShortcuts(state: AwakeState) {
         val shortcutManager = context.getSystemService(ShortcutManager::class.java) ?: return
         val activeAlias = iconSwitcher.getActiveAliasComponent()
+        val key = PublishedShortcutKey(
+            activeAlias = activeAlias,
+            isAwake = state.isAwake,
+            durationMinutes = state.durationMinutes
+        )
+
+        val existingCount = runCatching { shortcutManager.dynamicShortcuts.size }.getOrDefault(0)
+        if (lastPublishedKey == key && existingCount == 3) {
+            return
+        }
+
+        val durationShort = formatDurationShort(state.durationMinutes)
+        val durationLong = formatDurationLong(state.durationMinutes)
 
         val statusLabelShort = if (state.isAwake) {
-            "Awake (${formatDurationShort(state.durationMinutes)})"
+            context.getString(R.string.shortcut_status_awake_short, durationShort)
         } else {
-            "Normal Suspend"
+            context.getString(R.string.shortcut_status_suspend_short)
         }
         val statusLabelLong = if (state.isAwake) {
-            "Awake: ${formatDurationLong(state.durationMinutes)} (Click to Suspend)"
+            context.getString(R.string.shortcut_status_awake_long, durationLong)
         } else {
-            "Status: Normal Suspend (Click to Keep Awake)"
+            context.getString(R.string.shortcut_status_suspend_long)
         }
         val statusIconRes = if (state.isAwake) {
             R.drawable.ic_stat_coffee_full
@@ -41,8 +63,8 @@ class AndroidShortcutPublisher(
             R.drawable.ic_stat_coffee_empty
         }
 
-        val timerLabelShort = "Timer: ${formatDurationShort(state.durationMinutes)}"
-        val timerLabelLong = "Cycle Timer (${formatDurationLong(state.durationMinutes)})"
+        val timerLabelShort = context.getString(R.string.shortcut_timer_short, durationShort)
+        val timerLabelLong = context.getString(R.string.shortcut_timer_long, durationLong)
 
         val shortcuts = listOf(
             ShortcutInfo.Builder(context, ID_STATUS_TOGGLE)
@@ -66,15 +88,17 @@ class AndroidShortcutPublisher(
             ShortcutInfo.Builder(context, ID_OPEN_SETTINGS)
                 .setActivity(activeAlias)
                 .setRank(2)
-                .setShortLabel("Awake Settings…")
-                .setLongLabel("Keep Awake Settings…")
+                .setShortLabel(context.getString(R.string.shortcut_open_settings_short))
+                .setLongLabel(context.getString(R.string.shortcut_open_settings_long))
                 .setIcon(Icon.createWithResource(context, R.drawable.ic_shortcut_settings))
                 .setIntent(createSettingsIntent())
                 .build()
         )
 
-        shortcutManager.dynamicShortcuts = shortcuts
-        shortcutManager.updateShortcuts(shortcuts)
+        runCatching {
+            shortcutManager.dynamicShortcuts = shortcuts
+            lastPublishedKey = key
+        }
     }
 
     private fun createShortcutActionIntent(action: String): Intent {
@@ -105,8 +129,14 @@ class AndroidShortcutPublisher(
         const val SETTINGS_DIALOG_ACTIVITY_CLASS =
             "com.meridian11.books.awake.ui.SettingsDialogActivity"
 
+        fun reportShortcutUsed(context: Context, shortcutId: String) {
+            runCatching {
+                context.getSystemService(ShortcutManager::class.java)?.reportShortcutUsed(shortcutId)
+            }
+        }
+
         fun formatDurationShort(durationMinutes: Int): String = when (durationMinutes) {
-            0 -> "Indefinite"
+            0 -> "Infinite"
             60 -> "1h"
             120 -> "2h"
             240 -> "4h"
@@ -114,11 +144,18 @@ class AndroidShortcutPublisher(
         }
 
         fun formatDurationLong(durationMinutes: Int): String = when (durationMinutes) {
-            0 -> "Indefinite"
+            0 -> "Infinite"
             60 -> "1 Hour"
             120 -> "2 Hours"
             240 -> "4 Hours"
             else -> "$durationMinutes Minutes"
+        }
+
+        fun formatTimerSubtitle(durationMinutes: Int): String = when (durationMinutes) {
+            0 -> "Infinite"
+            60 -> "1h timer"
+            120 -> "2h timer"
+            else -> "${durationMinutes}m timer"
         }
     }
 }

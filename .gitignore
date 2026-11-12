@@ -31,6 +31,12 @@ captures/
 # macOS
 .DS_Store
 
-# Signing keystores
+# Signing keystores, credentials & service accounts
 *.jks
+*.keystore
+*.p12
+*.pfx
+*.pass
+*.pem
 keystore.properties
+*service-account*.json
